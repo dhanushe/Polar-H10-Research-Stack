@@ -134,7 +134,7 @@ class PrecisionTimer {
 
 /// Represents a timing session with its own epoch reference
 /// Useful when tracking multiple independent sensors or sessions
-class TimingSession {
+class TimingSession: Codable {
 
     // MARK: - Properties
 
@@ -148,6 +148,15 @@ class TimingSession {
         self.sessionId = sessionId
         self.startMonotonicTime = PrecisionTimer.shared.now()
         self.startWallTime = Date()
+    }
+
+    // MARK: - Codable Support
+
+    /// Initialize from persisted state (for restoration from background)
+    init(sessionId: String, startWallTime: Date, startMonotonicTime: TimeInterval) {
+        self.sessionId = sessionId
+        self.startWallTime = startWallTime
+        self.startMonotonicTime = startMonotonicTime
     }
 
     // MARK: - Timing Functions

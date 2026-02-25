@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="05151144-8d7d-4f0a-a4ec-5a6b3351671f" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../RecordingWidget/AppIntent.swift" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../RecordingWidget/Assets.xcassets/AccentColor.colorset/Contents.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../RecordingWidget/Assets.xcassets/AppIcon.appiconset/Contents.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../RecordingWidget/Assets.xcassets/Contents.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../RecordingWidget/Assets.xcassets/WidgetBackground.colorset/Contents.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../RecordingWidget/Info.plist" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../RecordingWidget/RecordingWidgetBundle.swift" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../RecordingWidgetExtension.entitlements" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../URAP Polar H10 V1.xcodeproj/project.pbxproj" beforeDir="false" afterPath="$PROJECT_DIR$/../URAP Polar H10 V1.xcodeproj/project.pbxproj" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../URAP Polar H10 V1.xcodeproj/xcuserdata/dhanusheashwar.xcuserdatad/xcschemes/xcschememanagement.plist" beforeDir="false" afterPath="$PROJECT_DIR$/../URAP Polar H10 V1.xcodeproj/xcuserdata/dhanusheashwar.xcuserdatad/xcschemes/xcschememanagement.plist" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DashboardView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/DashboardView.swift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DesignSystem.swift" beforeDir="false" afterPath="$PROJECT_DIR$/DesignSystem.swift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/LiveActivityManager.swift" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/PolarDashboardApp.swift" beforeDir="false" afterPath="$PROJECT_DIR$/PolarDashboardApp.swift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PolarManager.swift" beforeDir="false" afterPath="$PROJECT_DIR$/PolarManager.swift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PrecisionTimer.swift" beforeDir="false" afterPath="$PROJECT_DIR$/PrecisionTimer.swift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecordingActivityAttributes.swift" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecordingDetailView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/RecordingDetailView.swift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecordingLiveActivity.swift" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecordingsListView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/RecordingsListView.swift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RecordingsManager.swift" beforeDir="false" afterPath="$PROJECT_DIR$/RecordingsManager.swift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SensorDetailView.swift" beforeDir="false" afterPath="$PROJECT_DIR$/SensorDetailView.swift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SensorRecording.swift" beforeDir="false" afterPath="$PROJECT_DIR$/SensorRecording.swift" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../URAP-Polar-H10-V1-Info.plist" beforeDir="false" afterPath="$PROJECT_DIR$/../URAP-Polar-H10-V1-Info.plist" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "customColor": "",
+  "associatedIndex": 7
+}]]></component>
+  <component name="ProjectId" id="3A8wWY44Rg35e2WxISCfxiw0EdM" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-python-sdk-4e2b1448bda8-9a97661f3031-com.jetbrains.pycharm.pro.sharedIndexes.bundled-PY-252.27397.106" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="05151144-8d7d-4f0a-a4ec-5a6b3351671f" name="Changes" comment="" />
+      <created>1771987537553</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1771987537553</updated>
+    </task>
+    <servers />
+  </component>
+</project>

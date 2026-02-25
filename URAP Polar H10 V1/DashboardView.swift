@@ -10,12 +10,15 @@ import Combine
 import PolarBleSdk
 
 struct DashboardView: View {
-    @StateObject private var polarManager = PolarManager()
-    @StateObject private var recordingsManager = RecordingsManager.shared
+    @StateObject private var polarManager = PolarManager.shared
+    @StateObject private var recordingCoordinator = RecordingCoordinator.shared
     @State private var showDeviceList = false
     @State private var currentTime = Date()
-    @State private var showIndividualRecordingAlert = false
     @State private var showRecordingSavedAlert = false
+    @State private var showRecordingError = false
+    @State private var showRecordingIdSheet = false
+    @State private var recordingIdInput: String = ""
+    @State private var recordingIdError: String?
     @Environment(\.colorScheme) var colorScheme
 
     let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
@@ -66,31 +69,22 @@ struct DashboardView: View {
                 DeviceListView(polarManager: polarManager, isPresented: $showDeviceList)
             }
             .onReceive(timer) { _ in
-                if polarManager.globalRecordingState == .recording {
+                if recordingCoordinator.state.isRecording {
                     currentTime = Date()
+                }
+            }
+            .onChange(of: recordingCoordinator.state) { oldState, newState in
+                // Show saved alert when transitioning from saving to idle
+                if case .saving = oldState, case .idle = newState {
+                    showRecordingSavedAlert = true
+                }
+                // Show error if there's an error state
+                if case .error = newState {
+                    showRecordingError = true
                 }
             }
             .overlay(alignment: .bottom) {
                 VStack(spacing: AppTheme.spacing.sm) {
-                    if showIndividualRecordingAlert {
-                        individualRecordingToast
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                            .animation(.spring(response: 0.5, dampingFraction: 0.7), value: showIndividualRecordingAlert)
-                            .onAppear {
-                                // Auto-dismiss after 3 seconds
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                                    withAnimation {
-                                        showIndividualRecordingAlert = false
-                                    }
-                                }
-                            }
-                            .onTapGesture {
-                                withAnimation {
-                                    showIndividualRecordingAlert = false
-                                }
-                            }
-                    }
-
                     if showRecordingSavedAlert {
                         recordingSavedToast
                             .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -117,72 +111,6 @@ struct DashboardView: View {
     }
 
     // MARK: - Toast Alert
-
-    private var individualRecordingToast: some View {
-        GlassCard {
-            HStack(spacing: AppTheme.spacing.md) {
-                // Warning icon
-                ZStack {
-                    Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.orange, Color.orange.opacity(0.7)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 44, height: 44)
-
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.title3)
-                        .foregroundColor(.white)
-                }
-
-                // Message
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Individual Recording Active")
-                        .font(.headline)
-                        .fontWeight(.bold)
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
-
-                    Text("Stop individual sensor recordings before starting group recording")
-                        .font(.caption)
-                        .foregroundColor(.primary.opacity(0.7))
-                        .lineLimit(2)
-                        .minimumScaleFactor(0.8)
-                }
-
-                Spacer(minLength: 8)
-
-                // Dismiss button
-                Button(action: {
-                    withAnimation {
-                        showIndividualRecordingAlert = false
-                    }
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.title3)
-                        .foregroundColor(.secondary.opacity(0.5))
-                }
-                .buttonStyle(PlainButtonStyle())
-            }
-            .padding(AppTheme.spacing.lg)
-        }
-        .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.cornerRadius.lg)
-                .stroke(
-                    LinearGradient(
-                        colors: [Color.orange, Color.orange.opacity(0.5)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1.5
-                )
-        )
-        .shadow(color: Color.orange.opacity(0.3), radius: 20, x: 0, y: 10)
-    }
 
     private var recordingSavedToast: some View {
         GlassCard {
@@ -256,9 +184,15 @@ struct DashboardView: View {
                 // Status Header
                 statusHeader
 
-                // Stats Row
-                if polarManager.globalRecordingState != .idle {
-                    statsRow
+                // Sensor count when active
+                if recordingCoordinator.state.isActive {
+                    HStack(spacing: AppTheme.spacing.lg) {
+                        StatPill(count: recordingCoordinator.activeSensorCount, label: "Sensors", color: .blue)
+                        if recordingCoordinator.state.isRecording {
+                            StatPill(count: recordingCoordinator.activeSensorCount, label: "Recording", color: .red)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
                 }
 
                 // Control Buttons
@@ -270,15 +204,15 @@ struct DashboardView: View {
 
     private var statusHeader: some View {
         HStack {
-            if polarManager.anyRecording {
+            if recordingCoordinator.state.isRecording {
                 PulsingDot(color: .red)
             }
 
-            RecordingStatusBadge(state: polarManager.globalRecordingState)
+            RecordingStatusBadge(state: recordingCoordinator.state)
 
             Spacer()
 
-            if polarManager.globalRecordingState == .recording {
+            if recordingCoordinator.state.isRecording {
                 Text(formatDuration(currentDuration))
                     .font(.caption)
                     .fontWeight(.semibold)
@@ -291,23 +225,7 @@ struct DashboardView: View {
     private var currentDuration: TimeInterval {
         // Use currentTime to force SwiftUI to recalculate
         _ = currentTime
-        return polarManager.globalSessionDuration
-    }
-
-    private var statsRow: some View {
-        let stats = polarManager.recordingStats
-        return HStack(spacing: AppTheme.spacing.lg) {
-            if stats.recording > 0 {
-                StatPill(count: stats.recording, label: "Recording", color: .red)
-            }
-            if stats.paused > 0 {
-                StatPill(count: stats.paused, label: "Paused", color: .orange)
-            }
-            if stats.idle > 0 {
-                StatPill(count: stats.idle, label: "Idle", color: .gray)
-            }
-        }
-        .frame(maxWidth: .infinity)
+        return recordingCoordinator.sessionDuration
     }
 
     private var controlButtons: some View {
@@ -316,12 +234,29 @@ struct DashboardView: View {
             pauseButton
             stopButton
         }
+        .sheet(isPresented: $showRecordingIdSheet) {
+            RecordingIdEntrySheet(
+                recordingId: $recordingIdInput,
+                errorMessage: $recordingIdError,
+                onCancel: {
+                    recordingIdInput = ""
+                    recordingIdError = nil
+                    showRecordingIdSheet = false
+                },
+                onStart: { id in
+                    let sensorList = polarManager.connectedSensors.map { (id: $0.id, name: $0.deviceName) }
+                    recordingCoordinator.startRecording(sensors: sensorList, recordingId: id)
+                    showRecordingIdSheet = false
+                }
+            )
+        }
     }
 
     private var startButton: some View {
-        let title = polarManager.globalRecordingState == .paused ? "Resume All" : "Start All"
-        let icon = polarManager.globalRecordingState == .paused ? "play.fill" : "record.circle"
-        let disabled = polarManager.globalRecordingState == .recording
+        let isPaused = recordingCoordinator.state.isPaused
+        let title = isPaused ? "Resume All" : "Start All"
+        let icon = isPaused ? "play.fill" : "record.circle"
+        let disabled = recordingCoordinator.state.isRecording
 
         return GradientButton(
             title: title,
@@ -330,11 +265,12 @@ struct DashboardView: View {
             isDisabled: disabled,
             isCompact: true
         ) {
-            // Check if any sensors are recording individually
-            if polarManager.hasIndividualRecordings {
-                showIndividualRecordingAlert = true
+            if isPaused {
+                recordingCoordinator.resumeRecording()
             } else {
-                polarManager.startAllRecordings()
+                recordingIdInput = ""
+                recordingIdError = nil
+                showRecordingIdSheet = true
             }
         }
     }
@@ -344,27 +280,25 @@ struct DashboardView: View {
             title: "Pause All",
             icon: "pause.fill",
             gradient: orangeGradient,
-            isDisabled: polarManager.globalRecordingState != .recording,
+            isDisabled: !recordingCoordinator.state.isRecording,
             isCompact: true
         ) {
-            polarManager.pauseAllRecordings()
+            recordingCoordinator.pauseRecording()
         }
     }
 
     private var stopButton: some View {
-        GradientButton(
+        let isIdle = !recordingCoordinator.state.isActive
+        return GradientButton(
             title: "Stop All",
             icon: "stop.fill",
             gradient: redGradient,
-            isDisabled: polarManager.globalRecordingState == .idle,
+            isDisabled: isIdle,
             isCompact: true
         ) {
-            // Capture recording before stopping
-            if polarManager.globalRecordingState == .recording {
-                recordingsManager.captureRecording(from: polarManager)
-                showRecordingSavedAlert = true
+            Task {
+                await recordingCoordinator.stopRecording()
             }
-            polarManager.stopAllRecordings()
         }
     }
 
@@ -401,8 +335,8 @@ struct DashboardView: View {
                 GridItem(.flexible(), spacing: AppTheme.spacing.md),
                 GridItem(.flexible(), spacing: AppTheme.spacing.md)
             ], spacing: AppTheme.spacing.md) {
-                ForEach(polarManager.connectedSensors) { sensor in
-                    NavigationLink(destination: SensorDetailView(sensor: sensor)) {
+                ForEach(polarManager.connectedSensors, id: \.id) { sensor in
+                    NavigationLink(destination: SensorDetailView(sensor: sensor).id(sensor.id)) {
                         ModernSensorCard(sensor: sensor) {
                             polarManager.disconnect(deviceId: sensor.id)
                         }
@@ -585,7 +519,7 @@ struct ModernSensorCard: View {
                         .lineLimit(1)
                 }
 
-                // Secondary Metrics & Recording Badge - Inline
+                // Secondary Metrics
                 HStack(spacing: AppTheme.spacing.sm) {
                     // Inline metrics with bullet separator
                     Text("\(sensor.rrInterval)ms • \(sensor.batteryLevel)%")
@@ -595,20 +529,6 @@ struct ModernSensorCard: View {
                         .lineLimit(1)
 
                     Spacer()
-
-                    // Recording badge inline
-                    if sensor.recordingState != .idle {
-                        HStack(spacing: 4) {
-                            Circle()
-                                .fill(recordingColor)
-                                .frame(width: 6, height: 6)
-                            Text(sensor.recordingState.displayText)
-                                .font(.caption2)
-                                .fontWeight(.semibold)
-                                .foregroundColor(recordingColor)
-                                .lineLimit(1)
-                        }
-                    }
 
                     // Tap indicator
                     Image(systemName: "chevron.right.circle.fill")
@@ -634,14 +554,6 @@ struct ModernSensorCard: View {
         case .connected: return sensor.isActive ? .green : .yellow
         case .connecting: return .orange
         case .disconnected: return .red
-        }
-    }
-
-    private var recordingColor: Color {
-        switch sensor.recordingState {
-        case .idle: return .gray
-        case .recording: return .red
-        case .paused: return .orange
         }
     }
 

@@ -339,13 +339,13 @@ struct GradientText: View {
 // MARK: - Recording Status Badge
 
 struct RecordingStatusBadge: View {
-    let state: RecordingState
+    let state: RecordingLifecycleState
 
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: state.icon)
                 .font(.caption)
-                .symbolEffect(.pulse, options: .repeating, value: state == .recording)
+                .symbolEffect(.pulse, options: .repeating, value: state.isRecording)
 
             Text(state.displayText)
                 .font(.caption)
@@ -362,11 +362,10 @@ struct RecordingStatusBadge: View {
     }
 
     private var backgroundColor: Color {
-        switch state {
-        case .idle: return .gray
-        case .recording: return .red
-        case .paused: return .orange
-        }
+        if state.isRecording { return .red }
+        if state.isPaused { return .orange }
+        if state.isSaving { return .blue }
+        return .gray
     }
 }
 

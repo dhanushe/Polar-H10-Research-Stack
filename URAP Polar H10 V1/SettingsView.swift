@@ -6,10 +6,13 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct SettingsView: View {
     @ObservedObject var settings = AppSettings.shared
     @Environment(\.colorScheme) var colorScheme
+    @State private var apiBaseURL: String?
+    @State private var deviceIP: String?
 
     var body: some View {
         NavigationView {
@@ -23,6 +26,9 @@ struct SettingsView: View {
                         // Header
                         headerSection
 
+                        // API for Python (device IP & base URL)
+                        apiSection
+
                         // HRV Settings
                         hrvSettingsSection
 
@@ -34,6 +40,18 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.large)
+            .onAppear {
+                refreshAPIInfo()
+            }
+        }
+    }
+
+    private func refreshAPIInfo() {
+        apiBaseURL = APIServer.shared.baseURLString()
+        if let urlString = apiBaseURL, let url = URL(string: urlString) {
+            deviceIP = url.host
+        } else {
+            deviceIP = nil
         }
     }
 
@@ -56,6 +74,85 @@ struct SettingsView: View {
             }
             .padding(AppTheme.spacing.lg)
         }
+    }
+
+    // MARK: - API Section (Device IP & Base URL for Python)
+
+    private var apiSection: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: AppTheme.spacing.md) {
+                HStack {
+                    Image(systemName: "network")
+                        .font(.title2)
+                        .foregroundStyle(AppTheme.primaryGradient)
+
+                    Text("API for Python")
+                        .font(.headline)
+                        .fontWeight(.bold)
+
+                    Spacer()
+                }
+
+                Divider()
+                    .background(Color.white.opacity(0.1))
+
+                if let ip = deviceIP, let url = apiBaseURL {
+                    VStack(alignment: .leading, spacing: AppTheme.spacing.sm) {
+                        Text("Use these in your Python script when the app is open and on the same Wi‑Fi as your computer.")
+                            .font(.caption)
+                            .foregroundColor(.primary.opacity(0.7))
+
+                        apiInfoRow(label: "Device IP", value: ip)
+                        apiInfoRow(label: "Base URL", value: url)
+                    }
+                } else {
+                    VStack(alignment: .leading, spacing: AppTheme.spacing.sm) {
+                        Text("Device IP and base URL appear here when:")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.primary)
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("• The app is in the foreground")
+                            Text("• The device is connected to Wi‑Fi")
+                        }
+                        .font(.caption)
+                        .foregroundColor(.primary.opacity(0.7))
+
+                        Text("Then use the Base URL as base_url in Python: get_recording(id, base_url=...)")
+                            .font(.caption)
+                            .foregroundColor(.primary.opacity(0.6))
+                            .padding(.top, 4)
+                    }
+                }
+            }
+            .padding(AppTheme.spacing.lg)
+        }
+    }
+
+    private func apiInfoRow(label: String, value: String) -> some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(.caption)
+                    .foregroundColor(.primary.opacity(0.6))
+                Text(value)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.primary)
+                    .textSelection(.enabled)
+            }
+            Spacer()
+            Button(action: {
+                UIPasteboard.general.string = value
+            }) {
+                Image(systemName: "doc.on.doc")
+                    .font(.body)
+                    .foregroundColor(AppTheme.accentBlue)
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .padding(.vertical, 4)
     }
 
     // MARK: - HRV Settings Section

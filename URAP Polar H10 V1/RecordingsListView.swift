@@ -79,7 +79,7 @@ struct RecordingsListView: View {
 
                 // Recording cards
                 ForEach(filteredRecordings) { recording in
-                    NavigationLink(destination: RecordingDetailView(recording: recording)) {
+                    NavigationLink(destination: RecordingDetailView(recordingId: recording.id)) {
                         RecordingCard(recording: recording)
                     }
                     .buttonStyle(PlainButtonStyle())
@@ -268,6 +268,12 @@ struct RecordingCard: View {
                         Text(recording.formattedShortDate)
                             .font(.caption)
                             .foregroundColor(.primary.opacity(0.6))
+
+                        Text("ID: \(recording.id)")
+                            .font(.caption2)
+                            .foregroundColor(.primary.opacity(0.5))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
                     }
 
                     Spacer()

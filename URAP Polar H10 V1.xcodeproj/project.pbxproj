@@ -7,91 +7,22 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		964664662EB1E24500786FC0 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 964664652EB1E24500786FC0 /* WidgetKit.framework */; };
-		964664682EB1E24500786FC0 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 964664672EB1E24500786FC0 /* SwiftUI.framework */; };
-		964664792EB1E24600786FC0 /* RecordingWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 964664632EB1E24500786FC0 /* RecordingWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		96ECA1FB2E95ACAE000F5309 /* PolarBleSdk in Frameworks */ = {isa = PBXBuildFile; productRef = 96ECA1FA2E95ACAE000F5309 /* PolarBleSdk */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		964664772EB1E24600786FC0 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 96591A262E959FC300334824 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 964664622EB1E24500786FC0;
-			remoteInfo = RecordingWidgetExtension;
-		};
-/* End PBXContainerItemProxy section */
-
-/* Begin PBXCopyFilesBuildPhase section */
-		9646647A2EB1E24600786FC0 /* Embed Foundation Extensions */ = {
-			isa = PBXCopyFilesBuildPhase;
-			buildActionMask = 2147483647;
-			dstPath = "";
-			dstSubfolderSpec = 13;
-			files = (
-				964664792EB1E24600786FC0 /* RecordingWidgetExtension.appex in Embed Foundation Extensions */,
-			);
-			name = "Embed Foundation Extensions";
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXCopyFilesBuildPhase section */
-
 /* Begin PBXFileReference section */
-		964664632EB1E24500786FC0 /* RecordingWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RecordingWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		964664652EB1E24500786FC0 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
-		964664672EB1E24500786FC0 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
-		964664802EB1E36800786FC0 /* RecordingWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RecordingWidgetExtension.entitlements; sourceTree = "<group>"; };
 		96591A2E2E959FC300334824 /* URAP Polar H10 V1.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "URAP Polar H10 V1.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		9646647D2EB1E24600786FC0 /* Exceptions for "RecordingWidget" folder in "RecordingWidgetExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 964664622EB1E24500786FC0 /* RecordingWidgetExtension */;
-		};
-		964664822EB1E3B200786FC0 /* Exceptions for "URAP Polar H10 V1" folder in "RecordingWidgetExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				RecordingActivityAttributes.swift,
-				RecordingLiveActivity.swift,
-			);
-			target = 964664622EB1E24500786FC0 /* RecordingWidgetExtension */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		964664692EB1E24500786FC0 /* RecordingWidget */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				9646647D2EB1E24600786FC0 /* Exceptions for "RecordingWidget" folder in "RecordingWidgetExtension" target */,
-			);
-			path = RecordingWidget;
-			sourceTree = "<group>";
-		};
 		96591A302E959FC300334824 /* URAP Polar H10 V1 */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				964664822EB1E3B200786FC0 /* Exceptions for "URAP Polar H10 V1" folder in "RecordingWidgetExtension" target */,
-			);
 			path = "URAP Polar H10 V1";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		964664602EB1E24500786FC0 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				964664682EB1E24500786FC0 /* SwiftUI.framework in Frameworks */,
-				964664662EB1E24500786FC0 /* WidgetKit.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		96591A2B2E959FC300334824 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -110,22 +41,10 @@
 			path = Pods;
 			sourceTree = "<group>";
 		};
-		964664642EB1E24500786FC0 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				964664652EB1E24500786FC0 /* WidgetKit.framework */,
-				964664672EB1E24500786FC0 /* SwiftUI.framework */,
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
 		96591A252E959FC300334824 = {
 			isa = PBXGroup;
 			children = (
-				964664802EB1E36800786FC0 /* RecordingWidgetExtension.entitlements */,
 				96591A302E959FC300334824 /* URAP Polar H10 V1 */,
-				964664692EB1E24500786FC0 /* RecordingWidget */,
-				964664642EB1E24500786FC0 /* Frameworks */,
 				96591A2F2E959FC300334824 /* Products */,
 				37BB8623BD0A4869C68DE8EF /* Pods */,
 			);
@@ -135,7 +54,6 @@
 			isa = PBXGroup;
 			children = (
 				96591A2E2E959FC300334824 /* URAP Polar H10 V1.app */,
-				964664632EB1E24500786FC0 /* RecordingWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -143,28 +61,6 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		964664622EB1E24500786FC0 /* RecordingWidgetExtension */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 9646647E2EB1E24600786FC0 /* Build configuration list for PBXNativeTarget "RecordingWidgetExtension" */;
-			buildPhases = (
-				9646645F2EB1E24500786FC0 /* Sources */,
-				964664602EB1E24500786FC0 /* Frameworks */,
-				964664612EB1E24500786FC0 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				964664692EB1E24500786FC0 /* RecordingWidget */,
-			);
-			name = RecordingWidgetExtension;
-			packageProductDependencies = (
-			);
-			productName = RecordingWidgetExtension;
-			productReference = 964664632EB1E24500786FC0 /* RecordingWidgetExtension.appex */;
-			productType = "com.apple.product-type.app-extension";
-		};
 		96591A2D2E959FC300334824 /* URAP Polar H10 V1 */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 96591A392E959FC400334824 /* Build configuration list for PBXNativeTarget "URAP Polar H10 V1" */;
@@ -172,12 +68,10 @@
 				96591A2A2E959FC300334824 /* Sources */,
 				96591A2B2E959FC300334824 /* Frameworks */,
 				96591A2C2E959FC300334824 /* Resources */,
-				9646647A2EB1E24600786FC0 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				964664782EB1E24600786FC0 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				96591A302E959FC300334824 /* URAP Polar H10 V1 */,
@@ -197,9 +91,6 @@
 				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
-					964664622EB1E24500786FC0 = {
-						CreatedOnToolsVersion = 26.0.1;
-					};
 					96591A2D2E959FC300334824 = {
 						CreatedOnToolsVersion = 26.0.1;
 					};
@@ -223,19 +114,11 @@
 			projectRoot = "";
 			targets = (
 				96591A2D2E959FC300334824 /* URAP Polar H10 V1 */,
-				964664622EB1E24500786FC0 /* RecordingWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		964664612EB1E24500786FC0 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		96591A2C2E959FC300334824 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -246,13 +129,6 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		9646645F2EB1E24500786FC0 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 		96591A2A2E959FC300334824 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -262,77 +138,7 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXTargetDependency section */
-		964664782EB1E24600786FC0 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 964664622EB1E24500786FC0 /* RecordingWidgetExtension */;
-			targetProxy = 964664772EB1E24600786FC0 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin XCBuildConfiguration section */
-		9646647B2EB1E24600786FC0 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = RecordingWidgetExtension.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
-				DEVELOPMENT_TEAM = 6F9N52HZUA;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = RecordingWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = RecordingWidget;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.1;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.dhanushe.CBE-Pulse.RecordingWidget";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		9646647C2EB1E24600786FC0 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
-				CODE_SIGN_ENTITLEMENTS = RecordingWidgetExtension.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
-				DEVELOPMENT_TEAM = 6F9N52HZUA;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = RecordingWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = RecordingWidget;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				MARKETING_VERSION = 1.1;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.dhanushe.CBE-Pulse.RecordingWidget";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
 		96591A372E959FC400334824 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -461,7 +267,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "URAP Polar H10 V1/URAP Polar H10 V1.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 6F9N52HZUA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -481,7 +287,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2;
+				MARKETING_VERSION = 3;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.dhanushe.CBE-Pulse";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -501,7 +307,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "URAP Polar H10 V1/URAP Polar H10 V1.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = 6F9N52HZUA;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -521,7 +327,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2;
+				MARKETING_VERSION = 3;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.dhanushe.CBE-Pulse";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -537,15 +343,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		9646647E2EB1E24600786FC0 /* Build configuration list for PBXNativeTarget "RecordingWidgetExtension" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				9646647B2EB1E24600786FC0 /* Debug */,
-				9646647C2EB1E24600786FC0 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		96591A292E959FC300334824 /* Build configuration list for PBXProject "URAP Polar H10 V1" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

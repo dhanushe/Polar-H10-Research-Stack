@@ -22,9 +22,11 @@ struct PolarDashboardApp: App {
             case .background:
                 print("App entering background - maintaining Bluetooth connections")
                 polarManager.handleAppBackground()
+                APIServer.shared.stop()
             case .active:
                 print("App becoming active - ensuring connections are healthy")
                 polarManager.handleAppForeground()
+                APIServer.shared.start()
             case .inactive:
                 print("App becoming inactive")
             @unknown default:

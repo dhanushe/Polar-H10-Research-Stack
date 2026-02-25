@@ -11,6 +11,7 @@ import Charts
 
 struct SensorDetailView: View {
     @ObservedObject var sensor: ConnectedSensor
+    @StateObject private var recordingCoordinator = RecordingCoordinator.shared
     @State private var selectedTimeRange: TimeRange = .twoMinutes
     @State private var currentTime = Date()
     @State private var selectedHRTimestamp: Date?
@@ -30,9 +31,6 @@ struct SensorDetailView: View {
                     // Header Card
                     headerCard
 
-                    // Recording Controls
-                    recordingControlsCard
-
                     // Primary Heart Rate Display
                     primaryHeartRateCard
 
@@ -51,7 +49,7 @@ struct SensorDetailView: View {
         .navigationTitle(sensor.deviceName)
         .navigationBarTitleDisplayMode(.inline)
         .onReceive(timer) { _ in
-            if sensor.recordingState == .recording {
+            if sensor.isActive {
                 currentTime = Date()
             }
         }
@@ -76,67 +74,16 @@ struct SensorDetailView: View {
                             .font(.subheadline)
                             .foregroundColor(.primary.opacity(0.7))
 
-                        if currentSessionDuration > 0 {
+                        if recordingCoordinator.state.isActive {
                             Text("•")
                                 .foregroundColor(.primary.opacity(0.7))
-                            Text(formatDuration(currentSessionDuration))
-                                .font(.subheadline)
-                                .foregroundColor(.primary.opacity(0.7))
-                                .monospacedDigit()
+
+                            RecordingStatusBadge(state: recordingCoordinator.state)
                         }
                     }
                 }
 
                 Spacer()
-            }
-            .padding()
-        }
-    }
-
-    // MARK: - Recording Controls
-
-    private var recordingControlsCard: some View {
-        GlassCard {
-            VStack(spacing: AppTheme.spacing.md) {
-                HStack {
-                    RecordingStatusBadge(state: sensor.recordingState)
-                    Spacer()
-                    if sensor.recordingState == .recording {
-                        PulsingDot(color: .red)
-                    }
-                }
-
-                HStack(spacing: AppTheme.spacing.sm) {
-                    GradientButton(
-                        title: sensor.recordingState == .paused ? "Resume" : "Start",
-                        icon: sensor.recordingState == .paused ? "play.fill" : "record.circle",
-                        gradient: LinearGradient(colors: [.green, .green.opacity(0.8)], startPoint: .topLeading, endPoint: .bottomTrailing),
-                        isDisabled: sensor.recordingState == .recording,
-                        isCompact: true
-                    ) {
-                        sensor.startRecording()
-                    }
-
-                    GradientButton(
-                        title: "Pause",
-                        icon: "pause.fill",
-                        gradient: LinearGradient(colors: [.orange, .orange.opacity(0.8)], startPoint: .topLeading, endPoint: .bottomTrailing),
-                        isDisabled: sensor.recordingState != .recording,
-                        isCompact: true
-                    ) {
-                        sensor.pauseRecording()
-                    }
-
-                    GradientButton(
-                        title: "Stop",
-                        icon: "stop.fill",
-                        gradient: LinearGradient(colors: [.red, .red.opacity(0.8)], startPoint: .topLeading, endPoint: .bottomTrailing),
-                        isDisabled: sensor.recordingState == .idle,
-                        isCompact: true
-                    ) {
-                        sensor.stopRecording()
-                    }
-                }
             }
             .padding()
         }
@@ -465,13 +412,19 @@ struct SensorDetailView: View {
     }
 
     private var filteredHeartRateData: [HeartRateDataPoint] {
+        guard !sensor.heartRateHistory.isEmpty else { return [] }
         let cutoffTime = Date().addingTimeInterval(-selectedTimeRange.seconds)
-        return sensor.heartRateHistory.filter { $0.timestamp >= cutoffTime }
+        // Create a copy to avoid concurrent modification issues
+        let historyCopy = sensor.heartRateHistory
+        return historyCopy.filter { $0.timestamp >= cutoffTime }
     }
 
     private var filteredRRIntervalData: [RRIntervalDataPoint] {
+        guard !sensor.rrIntervalHistory.isEmpty else { return [] }
         let cutoffTime = Date().addingTimeInterval(-selectedTimeRange.seconds)
-        return sensor.rrIntervalHistory.filter { $0.timestamp >= cutoffTime }
+        // Create a copy to avoid concurrent modification issues
+        let historyCopy = sensor.rrIntervalHistory
+        return historyCopy.filter { $0.timestamp >= cutoffTime }
     }
 
     // MARK: - Helper Functions

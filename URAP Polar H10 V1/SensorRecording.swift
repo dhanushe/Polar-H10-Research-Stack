@@ -72,56 +72,6 @@ struct TimingMetadata: Codable {
     }
 }
 
-// MARK: - Factory Methods
-
-extension SensorRecording {
-    /// Create a SensorRecording from a ConnectedSensor
-    static func from(sensor: ConnectedSensor) -> SensorRecording? {
-        guard let timingSession = sensor.timingSession,
-              let sessionStartTime = sensor.sessionStartTime else {
-            print("⚠️ Cannot create SensorRecording: missing timing session for sensor \(sensor.id)")
-            return nil
-        }
-
-        // Create deep copies of data arrays
-        let hrData = sensor.heartRateHistory.map { $0 }
-        let rrData = sensor.rrIntervalHistory.map { $0 }
-
-        guard !hrData.isEmpty else {
-            print("⚠️ Cannot create SensorRecording: no heart rate data for sensor \(sensor.id)")
-            return nil
-        }
-
-        let statistics = SensorStatistics(
-            minHeartRate: sensor.minHeartRate,
-            maxHeartRate: sensor.maxHeartRate,
-            averageHeartRate: sensor.averageHeartRate,
-            totalHeartRateSamples: sensor.totalHeartRateSamples,
-            sdnn: sensor.sdnn,
-            rmssd: sensor.rmssd,
-            hrvWindow: sensor.hrvWindow.rawValue,
-            hrvSampleCount: sensor.hrvSampleCount
-        )
-
-        let timingMetadata = TimingMetadata(
-            sessionId: timingSession.sessionId,
-            startWallTime: sessionStartTime,
-            startMonotonicTime: timingSession.startMonotonicTime,
-            endWallTime: Date()
-        )
-
-        return SensorRecording(
-            id: UUID().uuidString,
-            sensorId: sensor.id,
-            sensorName: sensor.displayId,
-            heartRateData: hrData,
-            rrIntervalData: rrData,
-            statistics: statistics,
-            timingMetadata: timingMetadata
-        )
-    }
-}
-
 // MARK: - CSV Export Helpers
 
 extension SensorRecording {

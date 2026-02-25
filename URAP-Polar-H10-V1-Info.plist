@@ -8,5 +8,7 @@
 	</array>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>This app exposes a local HTTP API so you can access recording data from Python on the same network.</string>
 </dict>
 </plist>
