@@ -20,10 +20,12 @@ from .session import (
     to_dataframes,
 )
 from .plotting import plot_heart_rate, plot_rr_intervals, plot_session
+from .zip_loader import load_from_zip
 
 __all__ = [
     "get_recording",
     "list_recordings",
+    "load_from_zip",
     "to_dataframes",
     "RecordingSession",
     "RecordingSummary",

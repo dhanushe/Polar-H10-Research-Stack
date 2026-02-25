@@ -85,6 +85,36 @@ urap_polar.plot_rr_intervals(session, sensor_id=None, show=True, save_path=None)
 - `to_dataframes(session)` accepts a **dict** or a **RecordingSession**.
 - `session.raw` is the raw JSON dict.
 
+## Loading from an exported zip
+
+If you have a **CSV zip** exported from the app (Export as CSV or Share zip), you can load it **without the app or network**:
+
+```python
+import urap_polar
+
+session = urap_polar.load_from_zip("path/to/recording_xxx_csv.zip")
+```
+
+The returned `session` is a **RecordingSession** with the same interface as from `get_recording()`: `session.sensors()`, `session.plot()`, `session.to_dataframes()`, etc.
+
+Example: load zip, print session info, then iterate sensors and stats:
+
+```python
+session = urap_polar.load_from_zip("recording_abc123_csv.zip")
+print(session.name, session.id, session.duration_seconds)
+for s in session.sensors():
+    print(s.sensor_name, s.heart_rate_avg, s.sdnn, s.rmssd)
+session.plot(save_path="plot.png")
+```
+
+**Sample scripts:**
+
+- **`scripts/process_zip_stats.py`** — Prints session and per-sensor statistics; optional `--output report.csv`.
+- **`scripts/zip_to_plot.py`** — Loads the zip and shows (or saves) the same HR + RR plots as the API client.
+
+Run from the `python-client` directory, e.g.:  
+`python scripts/process_zip_stats.py path/to/recording.zip`
+
 ## CLI
 
 From the `python-client` directory. Use the **base URL from the app: Settings → API for Python**.

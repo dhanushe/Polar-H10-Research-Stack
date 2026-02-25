@@ -13,6 +13,12 @@ import UIKit
 
 // MARK: - Load State
 
+/// Used to present the share sheet with a zip file URL.
+struct ShareZipItem: Identifiable {
+    let id = UUID()
+    let url: URL
+}
+
 enum RecordingLoadState: Equatable {
     case loading
     case loaded(RecordingSession)
@@ -42,6 +48,7 @@ struct RecordingDetailView: View {
     @State private var exportFilename: String = ""
     @State private var showExportError = false
     @State private var exportErrorMessage = ""
+    @State private var shareZipItem: ShareZipItem?
     @State private var expandedSensors: Set<String> = []
     @State private var showRawDataSheet = false
     @State private var showPythonInfoSheet = false
@@ -178,6 +185,10 @@ struct RecordingDetailView: View {
                         Button(action: { exportJSON(recording) }) {
                             Label("Export as JSON", systemImage: "doc.text")
                         }
+
+                        Button(action: { shareZip(recording) }) {
+                            Label("Share zip", systemImage: "square.and.arrow.up")
+                        }
                     } label: {
                         Label("Export", systemImage: "square.and.arrow.up")
                     }
@@ -224,6 +235,11 @@ struct RecordingDetailView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(exportErrorMessage)
+        }
+        .sheet(item: $shareZipItem) { item in
+            ShareSheetView(url: item.url) {
+                shareZipItem = nil
+            }
         }
         .sheet(isPresented: $showRawDataSheet) {
             RawDataViewerSheet(recording: recording)
@@ -693,6 +709,16 @@ struct RecordingDetailView: View {
             showExportError = true
         }
     }
+
+    /// Build CSV zip and present the system share sheet (Mail, AirDrop, etc.).
+    private func shareZip(_ recording: RecordingSession) {
+        guard let url = recordingsManager.exportCSV(recordingId: recording.id) else {
+            exportErrorMessage = "Failed to create CSV export"
+            showExportError = true
+            return
+        }
+        shareZipItem = ShareZipItem(url: url)
+    }
 }
 
 // MARK: - Python Recording ID Info Sheet
@@ -852,6 +878,10 @@ struct PythonRecordingIdInfoSheet: View {
             Text("In the app: Settings → API for Python shows your Device IP and Base URL. Use that as base_url in Python.")
                 .font(.caption)
                 .foregroundColor(.primary.opacity(0.8))
+
+            Text("You can also export a recording as a CSV zip (Export → Share zip) and process it offline with the Python scripts; see the Python client README.")
+                .font(.caption)
+                .foregroundColor(.primary.opacity(0.7))
         }
         .padding(AppTheme.spacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)

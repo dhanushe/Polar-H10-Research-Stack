@@ -72,6 +72,35 @@ python urap_polar.py <BASE_URL>
 
 The plot shows one row per sensor: heart rate (BPM) and RR intervals (ms) over time. Close the figure window to exit.
 
+## Working with exported CSV zip
+
+You can also work with recordings **without the app running** by using the **exported CSV zip**:
+
+1. In the app, open a recording and choose **Export → Export as CSV** (save to Files) or **Export → Share zip** to open the share sheet (e.g. Mail, AirDrop) and send the zip to your computer.
+2. The zip contains CSVs for the session and each sensor (heart rate, RR intervals, statistics). Use the same Python library to load and process it.
+
+**Load the zip in Python:**
+
+```python
+import urap_polar
+
+session = urap_polar.load_from_zip("path/to/recording_xxx_csv.zip")
+print(session.name, session.duration_seconds)
+session.plot()  # same plotting as with the API
+```
+
+**Sample scripts** (run from the `python-client` directory):
+
+- **Per-sensor statistics:**  
+  `python scripts/process_zip_stats.py path/to/recording_xxx_csv.zip`  
+  Optionally write a report: `--output report.csv`
+
+- **Plot from zip:**  
+  `python scripts/zip_to_plot.py path/to/recording_xxx_csv.zip`  
+  Optionally save the figure: `--save plot.png`
+
+You can email the zip from the app (Share zip) and run these scripts on your computer.
+
 ## Troubleshooting
 
 ### "Connection refused" or "Max retries exceeded"
