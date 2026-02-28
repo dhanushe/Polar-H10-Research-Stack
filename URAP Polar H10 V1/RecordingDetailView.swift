@@ -17,6 +17,7 @@ import UIKit
 struct ShareZipItem: Identifiable {
     let id = UUID()
     let url: URL
+    var suggestedFilename: String? { url.lastPathComponent }
 }
 
 enum RecordingLoadState: Equatable {
@@ -49,6 +50,7 @@ struct RecordingDetailView: View {
     @State private var showExportError = false
     @State private var exportErrorMessage = ""
     @State private var shareZipItem: ShareZipItem?
+    @State private var isPreparingShareZip = false
     @State private var expandedSensors: Set<String> = []
     @State private var showRawDataSheet = false
     @State private var showPythonInfoSheet = false
@@ -237,10 +239,27 @@ struct RecordingDetailView: View {
             Text(exportErrorMessage)
         }
         .sheet(item: $shareZipItem) { item in
-            ShareSheetView(url: item.url) {
+            ShareSheetView(url: item.url, suggestedFilename: item.suggestedFilename) {
                 shareZipItem = nil
             }
         }
+        .overlay {
+            if isPreparingShareZip {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+                VStack(spacing: 16) {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                        .tint(.white)
+                    Text("Preparing zip…")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.white)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .allowsHitTesting(!isPreparingShareZip)
         .sheet(isPresented: $showRawDataSheet) {
             RawDataViewerSheet(recording: recording)
         }
@@ -711,13 +730,24 @@ struct RecordingDetailView: View {
     }
 
     /// Build CSV zip and present the system share sheet (Mail, AirDrop, etc.).
+    /// Export runs on a background queue so the UI stays responsive; a loading overlay is shown until the zip is ready.
     private func shareZip(_ recording: RecordingSession) {
-        guard let url = recordingsManager.exportCSV(recordingId: recording.id) else {
-            exportErrorMessage = "Failed to create CSV export"
-            showExportError = true
-            return
+        isPreparingShareZip = true
+        let recordingId = recording.id
+        DispatchQueue.global(qos: .userInitiated).async { [recordingsManager] in
+            guard let url = recordingsManager.exportCSV(recordingId: recordingId) else {
+                DispatchQueue.main.async {
+                    exportErrorMessage = "Failed to create CSV export"
+                    showExportError = true
+                    isPreparingShareZip = false
+                }
+                return
+            }
+            DispatchQueue.main.async {
+                shareZipItem = ShareZipItem(url: url)
+                isPreparingShareZip = false
+            }
         }
-        shareZipItem = ShareZipItem(url: url)
     }
 }
 

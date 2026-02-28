@@ -47,6 +47,7 @@ def _parse_session_info(content: str) -> Tuple[Dict[str, Any], List[Dict[str, An
             if not row or not row[0]:
                 continue
             row = row[0]
+            # Expect at least 7 columns; sensor name may contain commas so use last 5 for numeric fields
             if len(row) >= 7:
                 def _int(s: str) -> int:
                     try:
@@ -60,14 +61,24 @@ def _parse_session_info(content: str) -> Tuple[Dict[str, Any], List[Dict[str, An
                     except ValueError:
                         return 0.0
 
+                sensor_id = row[0].strip()
+                # Last 5 columns: HR Samples, RR Samples, Avg HR, SDNN, RMSSD
+                hr_samples = _int(row[-5])
+                rr_samples = _int(row[-4])
+                avg_hr = _float(row[-3])
+                sdnn = _float(row[-2])
+                rmssd = _float(row[-1])
+                # Sensor name is everything between first and last 5 columns (handles commas in name)
+                sensor_name = ",".join(c.strip() for c in row[1:-5]) if len(row) > 7 else row[1].strip()
+
                 sensors_table.append({
-                    "sensor_id": row[0].strip(),
-                    "sensor_name": row[1].strip(),
-                    "hr_samples": _int(row[2]),
-                    "rr_samples": _int(row[3]),
-                    "avg_hr": _float(row[4]),
-                    "sdnn": _float(row[5]),
-                    "rmssd": _float(row[6]),
+                    "sensor_id": sensor_id,
+                    "sensor_name": sensor_name,
+                    "hr_samples": hr_samples,
+                    "rr_samples": rr_samples,
+                    "avg_hr": avg_hr,
+                    "sdnn": sdnn,
+                    "rmssd": rmssd,
                 })
             continue
         # Key,Value (value may contain commas)
