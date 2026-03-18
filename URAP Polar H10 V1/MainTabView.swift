@@ -2,7 +2,7 @@
 //  MainTabView.swift
 //  URAP Polar H10 V1
 //
-//  Beautiful bottom tab navigation with glassmorphism
+//  Custom floating tab bar navigation
 //
 
 import SwiftUI
@@ -12,61 +12,31 @@ struct MainTabView: View {
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-        TabView(selection: $selectedTab) {
-            // Dashboard Tab
-            DashboardView()
-                .tabItem {
-                    Label("Dashboard", systemImage: "chart.line.uptrend.xyaxis")
+        ZStack(alignment: .bottom) {
+            TabView(selection: $selectedTab) {
+                NavigationView {
+                    DashboardView()
                 }
+                .navigationViewStyle(.stack)
                 .tag(0)
 
-            // Recordings Tab
-            RecordingsListView()
-                .tabItem {
-                    Label("Recordings", systemImage: "folder.fill")
+                NavigationView {
+                    RecordingsListView()
                 }
+                .navigationViewStyle(.stack)
                 .tag(1)
 
-            // Settings Tab
-            SettingsView()
-                .tabItem {
-                    Label("Settings", systemImage: "gear")
+                NavigationView {
+                    SettingsView()
                 }
+                .navigationViewStyle(.stack)
                 .tag(2)
-        }
-        .accentColor(AppTheme.accentBlue)
-        .onAppear {
-            setupTabBarAppearance(for: colorScheme)
-        }
-        .onChange(of: colorScheme) { _, newScheme in
-            setupTabBarAppearance(for: newScheme)
-        }
-    }
+            }
+            .toolbar(.hidden, for: .tabBar)
+            .ignoresSafeArea(edges: .bottom)
 
-    private func setupTabBarAppearance(for colorScheme: ColorScheme) {
-        let appearance = UITabBarAppearance()
-
-        // Glassmorphic background - adapts to light/dark mode
-        appearance.configureWithTransparentBackground()
-        appearance.backgroundColor = UIColor(AppTheme.adaptiveCardBackground(for: colorScheme))
-
-        // Selected item - use accent blue
-        appearance.stackedLayoutAppearance.selected.iconColor = UIColor(AppTheme.accentBlue)
-        appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
-            .foregroundColor: UIColor(AppTheme.accentBlue),
-            .font: UIFont.systemFont(ofSize: 11, weight: .semibold)
-        ]
-
-        // Normal item - subtle gray
-        appearance.stackedLayoutAppearance.normal.iconColor = UIColor.systemGray
-        appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
-            .foregroundColor: UIColor.systemGray,
-            .font: UIFont.systemFont(ofSize: 11, weight: .regular)
-        ]
-
-        UITabBar.appearance().standardAppearance = appearance
-        if #available(iOS 15.0, *) {
-            UITabBar.appearance().scrollEdgeAppearance = appearance
+            CustomFloatingTabBar(selectedTab: $selectedTab)
+                .padding(.bottom, 24)
         }
     }
 }

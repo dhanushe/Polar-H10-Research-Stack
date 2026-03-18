@@ -2,10 +2,11 @@
 //  DashboardView.swift
 //  URAP Polar H10 V1
 //
-//  Modern dashboard with global recording controls and beautiful UI
+//  Ultra-modern dashboard with live sensor cards and global recording controls
 //
 
 import SwiftUI
+import Charts
 import Combine
 import PolarBleSdk
 
@@ -15,144 +16,142 @@ struct DashboardView: View {
     @State private var showDeviceList = false
     @State private var currentTime = Date()
     @State private var showRecordingSavedAlert = false
-    @State private var showRecordingError = false
     @State private var showRecordingIdSheet = false
     @State private var recordingIdInput: String = ""
     @State private var recordingIdError: String?
+    @State private var headerAppeared = false
     @Environment(\.colorScheme) var colorScheme
 
     let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
 
     var body: some View {
-        NavigationView {
-            ZStack {
-                // Background gradient - adapts to light/dark mode
-                AppTheme.adaptiveBackground(for: colorScheme)
-                    .ignoresSafeArea()
+        ZStack {
+            AppTheme.adaptiveBackground(for: colorScheme)
+                .ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    // Global Recording Controls (if sensors connected)
-                    if !polarManager.connectedSensors.isEmpty {
-                        globalRecordingControls
-                            .padding(.horizontal)
-                            .padding(.top, AppTheme.spacing.md)
-                    }
+            // Subtle radial glow behind content in dark mode
+            if colorScheme == .dark {
+                RadialGradient(
+                    colors: [AppTheme.neonBlue.opacity(0.06), .clear],
+                    center: .top,
+                    startRadius: 0,
+                    endRadius: 360
+                )
+                .ignoresSafeArea()
+            }
 
-                    // Sensors Grid or Empty State
-                    if polarManager.connectedSensors.isEmpty {
-                        emptyState
-                    } else {
-                        sensorsScrollView
-                    }
-
-                    // Error Message
-                    if let error = polarManager.errorMessage {
-                        errorBanner(error)
-                            .padding()
-                    }
+            VStack(spacing: 0) {
+                if !polarManager.connectedSensors.isEmpty {
+                    globalRecordingControls
+                        .padding(.horizontal, AppTheme.spacing.md)
+                        .padding(.top, AppTheme.spacing.md)
+                        .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
-                // Floating Action Button
-                VStack {
+                if polarManager.connectedSensors.isEmpty {
+                    emptyState
+                } else {
+                    sensorsScrollView
+                }
+
+                if let error = polarManager.errorMessage {
+                    errorBanner(error)
+                        .padding(.horizontal, AppTheme.spacing.md)
+                        .padding(.bottom, AppTheme.spacing.sm)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: polarManager.connectedSensors.isEmpty)
+
+            // FAB
+            VStack {
+                Spacer()
+                HStack {
                     Spacer()
-                    HStack {
-                        Spacer()
-                        addSensorButton
-                    }
-                }
-                .padding(AppTheme.spacing.lg)
-                .padding(.bottom, polarManager.errorMessage != nil ? 60 : 0)
-            }
-            .navigationTitle("Dashboard")
-            .navigationBarTitleDisplayMode(.large)
-            .sheet(isPresented: $showDeviceList) {
-                DeviceListView(polarManager: polarManager, isPresented: $showDeviceList)
-            }
-            .onReceive(timer) { _ in
-                if recordingCoordinator.state.isRecording {
-                    currentTime = Date()
+                    FloatingActionButton(
+                        title: "Add Sensor",
+                        icon: "plus.circle.fill",
+                        action: { showDeviceList = true },
+                        isEnabled: polarManager.isBluetoothOn
+                    )
                 }
             }
-            .onChange(of: recordingCoordinator.state) { oldState, newState in
-                // Show saved alert when transitioning from saving to idle
-                if case .saving = oldState, case .idle = newState {
-                    showRecordingSavedAlert = true
-                }
-                // Show error if there's an error state
-                if case .error = newState {
-                    showRecordingError = true
-                }
-            }
-            .overlay(alignment: .bottom) {
-                VStack(spacing: AppTheme.spacing.sm) {
-                    if showRecordingSavedAlert {
-                        recordingSavedToast
-                            .transition(.move(edge: .bottom).combined(with: .opacity))
-                            .animation(.spring(response: 0.5, dampingFraction: 0.7), value: showRecordingSavedAlert)
-                            .onAppear {
-                                // Auto-dismiss after 3 seconds
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                                    withAnimation {
-                                        showRecordingSavedAlert = false
-                                    }
-                                }
-                            }
-                            .onTapGesture {
-                                withAnimation {
+            .padding(.horizontal, AppTheme.spacing.lg)
+            .padding(.bottom, 96)
+
+            // Toast overlay
+            VStack {
+                Spacer()
+                if showRecordingSavedAlert {
+                    recordingSavedToast
+                        .padding(.horizontal, AppTheme.spacing.lg)
+                        .padding(.bottom, 100)
+                        .transition(.asymmetric(
+                            insertion: .move(edge: .bottom).combined(with: .opacity),
+                            removal: .move(edge: .bottom).combined(with: .opacity)
+                        ))
+                        .onAppear {
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
                                     showRecordingSavedAlert = false
                                 }
                             }
-                    }
+                        }
+                        .onTapGesture {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                showRecordingSavedAlert = false
+                            }
+                        }
                 }
-                .padding(.bottom, 100)
-                .padding(.horizontal, AppTheme.spacing.lg)
+            }
+        }
+        .navigationTitle("Dashboard")
+        .navigationBarTitleDisplayMode(.large)
+        .sheet(isPresented: $showDeviceList) {
+            DeviceListView(polarManager: polarManager, isPresented: $showDeviceList)
+        }
+        .onReceive(timer) { _ in
+            if recordingCoordinator.state.isRecording {
+                currentTime = Date()
+            }
+        }
+        .onChange(of: recordingCoordinator.state) { oldState, newState in
+            if case .saving = oldState, case .idle = newState {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                    showRecordingSavedAlert = true
+                }
             }
         }
     }
 
-    // MARK: - Toast Alert
+    // MARK: - Toast
 
     private var recordingSavedToast: some View {
-        GlassCard {
+        GlassCard(accentColor: AppTheme.neonGreen) {
             HStack(spacing: AppTheme.spacing.md) {
-                // Success icon
                 ZStack {
                     Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.green, Color.green.opacity(0.7)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .fill(AppTheme.emeraldGradient)
                         .frame(width: 44, height: 44)
-
                     Image(systemName: "checkmark.circle.fill")
                         .font(.title3)
                         .foregroundColor(.white)
                 }
 
-                // Message
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Recording Saved!")
-                        .font(.headline)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Recording Saved")
+                        .font(.subheadline)
                         .fontWeight(.bold)
                         .foregroundColor(.primary)
-                        .lineLimit(1)
-
-                    Text("View in Recordings tab")
+                    Text("View it in the Recordings tab")
                         .font(.caption)
-                        .foregroundColor(.primary.opacity(0.7))
-                        .lineLimit(1)
+                        .foregroundColor(.secondary)
                 }
 
                 Spacer(minLength: 8)
 
-                // Dismiss button
                 Button(action: {
-                    withAnimation {
-                        showRecordingSavedAlert = false
-                    }
+                    withAnimation { showRecordingSavedAlert = false }
                 }) {
                     Image(systemName: "xmark.circle.fill")
                         .font(.title3)
@@ -162,50 +161,39 @@ struct DashboardView: View {
             }
             .padding(AppTheme.spacing.lg)
         }
-        .overlay(
-            RoundedRectangle(cornerRadius: AppTheme.cornerRadius.lg)
-                .stroke(
-                    LinearGradient(
-                        colors: [Color.green, Color.green.opacity(0.5)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1.5
-                )
-        )
-        .shadow(color: Color.green.opacity(0.3), radius: 20, x: 0, y: 10)
+        .shadow(color: AppTheme.neonGreen.opacity(0.3), radius: 24, x: 0, y: 12)
     }
 
     // MARK: - Global Recording Controls
 
     private var globalRecordingControls: some View {
-        GlassCard {
-            VStack(spacing: AppTheme.spacing.md) {
-                // Status Header
-                statusHeader
+        let isRecording = recordingCoordinator.state.isRecording
+        let isPaused = recordingCoordinator.state.isPaused
 
-                // Sensor count when active
+        return GlassCard(accentColor: isRecording ? AppTheme.neonRed : (isPaused ? AppTheme.neonOrange : nil)) {
+            VStack(spacing: AppTheme.spacing.md) {
+                recordingStatusRow
+
                 if recordingCoordinator.state.isActive {
-                    HStack(spacing: AppTheme.spacing.lg) {
-                        StatPill(count: recordingCoordinator.activeSensorCount, label: "Sensors", color: .blue)
-                        if recordingCoordinator.state.isRecording {
-                            StatPill(count: recordingCoordinator.activeSensorCount, label: "Recording", color: .red)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
+                    sensorCountRow
                 }
 
-                // Control Buttons
-                controlButtons
+                controlButtonRow
             }
             .padding(AppTheme.spacing.lg)
         }
+        .shadow(
+            color: isRecording ? AppTheme.neonRed.opacity(0.2) : .clear,
+            radius: 20, x: 0, y: 8
+        )
+        .animation(.easeInOut(duration: 0.4), value: isRecording)
     }
 
-    private var statusHeader: some View {
+    private var recordingStatusRow: some View {
         HStack {
             if recordingCoordinator.state.isRecording {
-                PulsingDot(color: .red)
+                PulsingDot(color: AppTheme.neonRed, size: 8)
+                    .transition(.scale.combined(with: .opacity))
             }
 
             RecordingStatusBadge(state: recordingCoordinator.state)
@@ -214,21 +202,26 @@ struct DashboardView: View {
 
             if recordingCoordinator.state.isRecording {
                 Text(formatDuration(currentDuration))
-                    .font(.caption)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.primary.opacity(0.7))
+                    .font(.system(.body, design: .monospaced))
+                    .fontWeight(.bold)
+                    .foregroundStyle(AppTheme.heartGradient)
                     .monospacedDigit()
+                    .contentTransition(.numericText())
             }
         }
     }
 
-    private var currentDuration: TimeInterval {
-        // Use currentTime to force SwiftUI to recalculate
-        _ = currentTime
-        return recordingCoordinator.sessionDuration
+    private var sensorCountRow: some View {
+        HStack(spacing: AppTheme.spacing.sm) {
+            StatPill(count: recordingCoordinator.activeSensorCount, label: "Sensors", color: AppTheme.neonBlue)
+            if recordingCoordinator.state.isRecording {
+                StatPill(count: recordingCoordinator.activeSensorCount, label: "Recording", color: AppTheme.neonRed)
+            }
+        }
+        .frame(maxWidth: .infinity)
     }
 
-    private var controlButtons: some View {
+    private var controlButtonRow: some View {
         HStack(spacing: AppTheme.spacing.sm) {
             startButton
             pauseButton
@@ -254,16 +247,14 @@ struct DashboardView: View {
 
     private var startButton: some View {
         let isPaused = recordingCoordinator.state.isPaused
-        let title = isPaused ? "Resume All" : "Start All"
-        let icon = isPaused ? "play.fill" : "record.circle"
+        let title = isPaused ? "Resume" : "Start"
+        let icon  = isPaused ? "play.fill" : "record.circle"
         let disabled = recordingCoordinator.state.isRecording
 
         return GradientButton(
-            title: title,
-            icon: icon,
-            gradient: greenGradient,
-            isDisabled: disabled,
-            isCompact: true
+            title: title, icon: icon,
+            gradient: AppTheme.emeraldGradient,
+            isDisabled: disabled, isCompact: true
         ) {
             if isPaused {
                 recordingCoordinator.resumeRecording()
@@ -277,9 +268,8 @@ struct DashboardView: View {
 
     private var pauseButton: some View {
         GradientButton(
-            title: "Pause All",
-            icon: "pause.fill",
-            gradient: orangeGradient,
+            title: "Pause", icon: "pause.fill",
+            gradient: AppTheme.sunriseGradient,
             isDisabled: !recordingCoordinator.state.isRecording,
             isCompact: true
         ) {
@@ -288,53 +278,26 @@ struct DashboardView: View {
     }
 
     private var stopButton: some View {
-        let isIdle = !recordingCoordinator.state.isActive
-        return GradientButton(
-            title: "Stop All",
-            icon: "stop.fill",
-            gradient: redGradient,
-            isDisabled: isIdle,
+        GradientButton(
+            title: "Stop", icon: "stop.fill",
+            gradient: LinearGradient(colors: [AppTheme.neonRed, Color(hex: "C0392B")],
+                                     startPoint: .topLeading, endPoint: .bottomTrailing),
+            isDisabled: !recordingCoordinator.state.isActive,
             isCompact: true
         ) {
-            Task {
-                await recordingCoordinator.stopRecording()
-            }
+            Task { await recordingCoordinator.stopRecording() }
         }
-    }
-
-    // Gradient helpers
-    private var greenGradient: LinearGradient {
-        LinearGradient(
-            colors: [Color.green, Color.green.opacity(0.8)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-
-    private var orangeGradient: LinearGradient {
-        LinearGradient(
-            colors: [Color.orange, Color.orange.opacity(0.8)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-
-    private var redGradient: LinearGradient {
-        LinearGradient(
-            colors: [Color.red, Color.red.opacity(0.8)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
     }
 
     // MARK: - Sensors Grid
 
     private var sensorsScrollView: some View {
         ScrollView {
-            LazyVGrid(columns: [
-                GridItem(.flexible(), spacing: AppTheme.spacing.md),
-                GridItem(.flexible(), spacing: AppTheme.spacing.md)
-            ], spacing: AppTheme.spacing.md) {
+            LazyVGrid(
+                columns: [GridItem(.flexible(), spacing: AppTheme.spacing.md),
+                          GridItem(.flexible(), spacing: AppTheme.spacing.md)],
+                spacing: AppTheme.spacing.md
+            ) {
                 ForEach(polarManager.connectedSensors, id: \.id) { sensor in
                     NavigationLink(destination: SensorDetailView(sensor: sensor).id(sensor.id)) {
                         ModernSensorCard(sensor: sensor) {
@@ -344,7 +307,8 @@ struct DashboardView: View {
                     .buttonStyle(PlainButtonStyle())
                 }
             }
-            .padding()
+            .padding(AppTheme.spacing.md)
+            .padding(.bottom, 100)
         }
     }
 
@@ -355,15 +319,29 @@ struct DashboardView: View {
             Spacer()
 
             ZStack {
-                Circle()
-                    .fill(AppTheme.primaryGradient.opacity(0.2))
-                    .frame(width: 140, height: 140)
-                    .blur(radius: 20)
+                ForEach([0, 1, 2], id: \.self) { i in
+                    Circle()
+                        .stroke(AppTheme.neonBlue.opacity(0.06 - Double(i) * 0.015), lineWidth: 1)
+                        .frame(width: CGFloat(120 + i * 50), height: CGFloat(120 + i * 50))
+                }
 
-                Image(systemName: "sensor.tag.radiowaves.forward")
-                    .font(.system(size: 70))
-                    .foregroundStyle(AppTheme.primaryGradient)
-                    .symbolRenderingMode(.hierarchical)
+                ZStack {
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [AppTheme.neonBlue.opacity(0.2), .clear],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: 60
+                            )
+                        )
+                        .frame(width: 120, height: 120)
+
+                    Image(systemName: "sensor.tag.radiowaves.forward")
+                        .font(.system(size: 52, weight: .light))
+                        .foregroundStyle(AppTheme.primaryGradient)
+                        .symbolRenderingMode(.hierarchical)
+                }
             }
 
             VStack(spacing: AppTheme.spacing.sm) {
@@ -371,57 +349,41 @@ struct DashboardView: View {
 
                 Text("Connect your Polar H10 to start\nmonitoring heart rate variability")
                     .font(.body)
-                    .foregroundColor(.primary.opacity(0.7))
+                    .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
             }
 
             Spacer()
         }
+        .padding(.bottom, 80)
     }
 
     // MARK: - Error Banner
 
     private func errorBanner(_ message: String) -> some View {
-        HStack {
+        HStack(spacing: AppTheme.spacing.sm) {
             Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundColor(.orange)
+                .foregroundColor(AppTheme.neonOrange)
             Text(message)
                 .font(.caption)
-                .foregroundColor(.white)
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
             Spacer()
         }
-        .padding()
-        .background(Color.orange.opacity(0.2))
-        .background(.ultraThinMaterial)
-        .cornerRadius(AppTheme.cornerRadius.md)
+        .padding(AppTheme.spacing.md)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: AppTheme.cornerRadius.md))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppTheme.cornerRadius.md)
+                .stroke(AppTheme.neonOrange.opacity(0.4), lineWidth: 1)
+        )
     }
 
-    // MARK: - Add Sensor Button
+    // MARK: - Helpers
 
-    private var addSensorButton: some View {
-        Button(action: {
-            showDeviceList = true
-        }) {
-            HStack(spacing: 8) {
-                Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 20, weight: .semibold))
-                Text("Add Sensor")
-                    .font(.system(size: 16, weight: .semibold))
-            }
-            .foregroundColor(.white)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 14)
-            .background(AppTheme.accentBlue)
-            .cornerRadius(12)
-            .shadow(color: AppTheme.accentBlue.opacity(0.3), radius: 8, x: 0, y: 4)
-        }
-        .disabled(!polarManager.isBluetoothOn)
-        .opacity(polarManager.isBluetoothOn ? 1.0 : 0.5)
-        .scaleEffect(polarManager.isBluetoothOn ? 1.0 : 0.95)
-        .animation(.easeInOut(duration: 0.2), value: polarManager.isBluetoothOn)
+    private var currentDuration: TimeInterval {
+        _ = currentTime
+        return recordingCoordinator.sessionDuration
     }
-
-    // MARK: - Helper Functions
 
     private func formatDuration(_ duration: TimeInterval) -> String {
         let minutes = Int(duration) / 60
@@ -430,7 +392,7 @@ struct DashboardView: View {
     }
 }
 
-// MARK: - Stat Pill Component
+// MARK: - Stat Pill
 
 struct StatPill: View {
     let count: Int
@@ -438,23 +400,26 @@ struct StatPill: View {
     let color: Color
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 5) {
             Circle()
                 .fill(color)
                 .frame(width: 6, height: 6)
+                .shadow(color: color.opacity(0.8), radius: 3)
 
             Text("\(count)")
                 .font(.caption2)
                 .fontWeight(.bold)
+                .foregroundColor(color)
 
             Text(label)
                 .font(.caption2)
+                .foregroundColor(.secondary)
         }
-        .foregroundColor(.white.opacity(0.8))
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(color.opacity(0.2))
-        .cornerRadius(AppTheme.cornerRadius.full)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(color.opacity(0.1))
+        .clipShape(Capsule())
+        .overlay(Capsule().stroke(color.opacity(0.25), lineWidth: 1))
     }
 }
 
@@ -463,21 +428,30 @@ struct StatPill: View {
 struct ModernSensorCard: View {
     @ObservedObject var sensor: ConnectedSensor
     let onDelete: () -> Void
+    @Environment(\.colorScheme) var colorScheme
+    @State private var appeared = false
+
+    private var recentHRData: [HeartRateDataPoint] {
+        let cutoff = Date().addingTimeInterval(-60)
+        return sensor.heartRateHistory.suffix(30).filter { $0.timestamp >= cutoff }
+    }
 
     var body: some View {
-        GlassCard {
+        GlassCard(accentColor: sensor.isActive ? AppTheme.neonBlue.opacity(0.5) : nil) {
             VStack(alignment: .leading, spacing: AppTheme.spacing.sm) {
-                // Header
+
+                // Header row
                 HStack {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 6) {
                         Circle()
                             .fill(statusColor)
-                            .frame(width: 8, height: 8)
+                            .frame(width: 7, height: 7)
+                            .shadow(color: statusColor.opacity(0.9), radius: sensor.isActive ? 4 : 0)
 
                         Text(sensor.displayId)
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(.primary.opacity(0.6))
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.secondary)
                             .lineLimit(1)
                     }
 
@@ -485,75 +459,99 @@ struct ModernSensorCard: View {
 
                     Button(action: onDelete) {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 16))
-                            .foregroundColor(.secondary.opacity(0.6))
+                            .font(.system(size: 15))
+                            .foregroundColor(.secondary.opacity(0.4))
                     }
                     .buttonStyle(PlainButtonStyle())
                 }
 
-                // Heart Rate - Primary
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                // Heart Rate Value
+                HStack(alignment: .firstTextBaseline, spacing: 5) {
                     Image(systemName: "heart.fill")
-                        .font(.caption)
-                        .foregroundColor(.red)
+                        .font(.caption2)
+                        .foregroundColor(AppTheme.neonRed)
                         .symbolEffect(.pulse, options: .repeating, value: sensor.isActive)
 
                     Text("\(sensor.heartRate)")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .font(.system(size: 36, weight: .black, design: .rounded))
                         .foregroundStyle(
-                            sensor.isActive ?
-                            LinearGradient(
-                                colors: [Color.red, Color.pink],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ) :
-                            LinearGradient(colors: [Color.gray.opacity(0.3)], startPoint: .top, endPoint: .bottom)
+                            sensor.isActive
+                                ? AnyShapeStyle(AppTheme.heartGradient)
+                                : AnyShapeStyle(Color.primary.opacity(0.2))
                         )
                         .contentTransition(.numericText())
                         .lineLimit(1)
 
                     Text("BPM")
-                        .font(.caption)
-                        .foregroundColor(.primary.opacity(0.6))
-                        .padding(.bottom, 4)
-                        .lineLimit(1)
+                        .font(.caption2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.secondary)
+                        .padding(.bottom, 5)
                 }
 
-                // Secondary Metrics
-                HStack(spacing: AppTheme.spacing.sm) {
-                    // Inline metrics with bullet separator
-                    Text("\(sensor.rrInterval)ms • \(sensor.batteryLevel)%")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(.primary.opacity(0.6))
+                // Mini sparkline chart
+                if !recentHRData.isEmpty && sensor.isActive {
+                    Chart(recentHRData) { dp in
+                        LineMark(
+                            x: .value("T", dp.timestamp),
+                            y: .value("HR", dp.value)
+                        )
+                        .foregroundStyle(AppTheme.heartGradient)
+                        .interpolationMethod(.catmullRom)
+                        AreaMark(
+                            x: .value("T", dp.timestamp),
+                            y: .value("HR", dp.value)
+                        )
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [AppTheme.neonRed.opacity(0.25), .clear],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .interpolationMethod(.catmullRom)
+                    }
+                    .chartXAxis(.hidden)
+                    .chartYAxis(.hidden)
+                    .frame(height: 36)
+                    .transition(.opacity)
+                }
+
+                // Secondary metrics
+                HStack {
+                    Label("\(sensor.rrInterval)ms", systemImage: "waveform")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
                         .lineLimit(1)
 
                     Spacer()
 
-                    // Tap indicator
-                    Image(systemName: "chevron.right.circle.fill")
+                    Label("\(sensor.batteryLevel)%", systemImage: batteryIcon(for: sensor.batteryLevel))
                         .font(.caption2)
-                        .foregroundColor(.secondary.opacity(0.3))
+                        .foregroundColor(batteryColor(for: sensor.batteryLevel))
+                        .lineLimit(1)
                 }
             }
             .padding(AppTheme.spacing.md)
         }
-        .overlay(
-            sensor.isActive ?
-            RoundedRectangle(cornerRadius: AppTheme.cornerRadius.lg)
-                .stroke(AppTheme.primaryGradient.opacity(0.3), lineWidth: 1)
-            : nil
+        .shadow(
+            color: sensor.isActive ? AppTheme.neonBlue.opacity(0.18) : .clear,
+            radius: 20, x: 0, y: 10
         )
-        .shadow(color: sensor.isActive ? AppTheme.accentBlue.opacity(0.3) : .clear, radius: 12, x: 0, y: 6)
-        .scaleEffect(sensor.isActive ? 1.0 : 0.98)
-        .animation(.easeInOut(duration: 0.3), value: sensor.isActive)
+        .scaleEffect(appeared ? 1.0 : 0.94)
+        .opacity(appeared ? 1.0 : 0)
+        .onAppear {
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.75).delay(0.05)) {
+                appeared = true
+            }
+        }
     }
 
     private var statusColor: Color {
         switch sensor.connectionState {
-        case .connected: return sensor.isActive ? .green : .yellow
-        case .connecting: return .orange
-        case .disconnected: return .red
+        case .connected:    return sensor.isActive ? AppTheme.neonGreen : Color.yellow
+        case .connecting:   return AppTheme.neonOrange
+        case .disconnected: return AppTheme.neonRed
         }
     }
 
@@ -566,7 +564,7 @@ struct ModernSensorCard: View {
     }
 
     private func batteryColor(for level: UInt) -> Color {
-        level > 20 ? .green : .red
+        level > 20 ? AppTheme.neonGreen : AppTheme.neonRed
     }
 }
 
@@ -582,7 +580,6 @@ struct MetricChip: View {
             Image(systemName: icon)
                 .font(.caption2)
                 .foregroundColor(color)
-
             Text(value)
                 .font(.caption)
                 .fontWeight(.medium)
@@ -590,12 +587,13 @@ struct MetricChip: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(color.opacity(0.1))
-        .cornerRadius(AppTheme.cornerRadius.sm)
+        .background(color.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.cornerRadius.sm))
+        .overlay(RoundedRectangle(cornerRadius: AppTheme.cornerRadius.sm).stroke(color.opacity(0.25), lineWidth: 1))
     }
 }
 
-// MARK: - Device List View (Modern)
+// MARK: - Device List View
 
 struct DeviceListView: View {
     @ObservedObject var polarManager: PolarManager
@@ -628,9 +626,9 @@ struct DeviceListView: View {
                         polarManager.stopScanning()
                         isPresented = false
                     }
-                    .foregroundColor(AppTheme.accentBlue)
+                    .foregroundColor(AppTheme.neonBlue)
+                    .fontWeight(.semibold)
                 }
-
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
                         if polarManager.isScanning {
@@ -640,33 +638,30 @@ struct DeviceListView: View {
                         }
                     }) {
                         if polarManager.isScanning {
-                            Text("Stop")
+                            Text("Stop").foregroundColor(AppTheme.neonRed)
                         } else {
                             Image(systemName: "arrow.clockwise")
+                                .foregroundColor(AppTheme.neonBlue)
                         }
                     }
-                    .foregroundColor(AppTheme.accentBlue)
                 }
             }
-            .onAppear {
-                polarManager.startScanning()
-            }
-            .onDisappear {
-                polarManager.stopScanning()
-            }
+            .onAppear { polarManager.startScanning() }
+            .onDisappear { polarManager.stopScanning() }
         }
     }
 
     private var scanningBanner: some View {
-        HStack {
+        HStack(spacing: 12) {
             ProgressView()
-                .tint(AppTheme.accentBlue)
+                .tint(AppTheme.neonBlue)
+                .scaleEffect(0.9)
             Text("Scanning for sensors...")
                 .font(.subheadline)
-                .foregroundColor(.primary.opacity(0.7))
+                .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding()
+        .padding(AppTheme.spacing.md)
         .background(.ultraThinMaterial)
     }
 
@@ -683,7 +678,7 @@ struct DeviceListView: View {
                     }
                 }
             }
-            .padding()
+            .padding(AppTheme.spacing.md)
         }
     }
 
@@ -691,19 +686,17 @@ struct DeviceListView: View {
         VStack(spacing: AppTheme.spacing.xl) {
             Spacer()
 
-            Image(systemName: "antenna.radiowaves.left.and.right.slash")
-                .font(.system(size: 60))
-                .foregroundStyle(AppTheme.primaryGradient)
+            NeonIconCircle(icon: "antenna.radiowaves.left.and.right.slash", gradient: AppTheme.primaryGradient, size: 72)
 
-            Text("No Devices Found")
-                .font(.headline)
-                .foregroundColor(.primary)
-
-            Text("Make sure your Polar H10 is nearby and powered on")
-                .font(.subheadline)
-                .foregroundColor(.primary.opacity(0.7))
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
+            VStack(spacing: AppTheme.spacing.sm) {
+                Text("No Devices Found")
+                    .font(.headline)
+                Text("Make sure your Polar H10 is nearby and powered on")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+            }
 
             GradientButton(title: "Scan Again", icon: "arrow.clockwise") {
                 polarManager.startScanning()
@@ -714,10 +707,7 @@ struct DeviceListView: View {
         }
     }
 
-    private var availableDevices: [PolarDeviceInfo] {
-        polarManager.discoveredDevices
-    }
-
+    private var availableDevices: [PolarDeviceInfo] { polarManager.discoveredDevices }
     private func isDeviceConnected(_ device: PolarDeviceInfo) -> Bool {
         polarManager.connectedSensors.contains { $0.id == device.deviceId }
     }
@@ -732,89 +722,45 @@ struct ModernDeviceRow: View {
 
     var body: some View {
         Button(action: onTap) {
-            GlassCard {
+            GlassCard(accentColor: isConnected ? AppTheme.neonGreen.opacity(0.5) : nil) {
                 HStack(spacing: AppTheme.spacing.md) {
-                    deviceIcon
-                    deviceInfo
+                    NeonIconCircle(
+                        icon: isConnected ? "checkmark.circle.fill" : "sensor.tag.radiowaves.forward.fill",
+                        gradient: isConnected ? AppTheme.emeraldGradient : AppTheme.primaryGradient,
+                        size: 50
+                    )
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(device.name)
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                            .lineLimit(1)
+                        Text(device.deviceId)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
                     Spacer()
-                    statusIndicator
+
+                    if isConnected {
+                        Text("Connected")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(AppTheme.emeraldGradient)
+                            .clipShape(Capsule())
+                    } else {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title3)
+                            .foregroundStyle(AppTheme.primaryGradient)
+                    }
                 }
                 .padding(AppTheme.spacing.lg)
             }
         }
-        .buttonStyle(PlainButtonStyle())
-    }
-
-    private var deviceIcon: some View {
-        ZStack {
-            Circle()
-                .fill(iconBackgroundFill)
-                .frame(width: 50, height: 50)
-
-            Image(systemName: iconSystemName)
-                .font(.title3)
-                .foregroundStyle(iconForegroundGradient)
-        }
-    }
-
-    private var deviceInfo: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(device.name)
-                .font(.headline)
-                .foregroundColor(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-
-            Text(device.deviceId)
-                .font(.caption)
-                .foregroundColor(.primary.opacity(0.6))
-                .lineLimit(1)
-        }
-    }
-
-    @ViewBuilder
-    private var statusIndicator: some View {
-        if isConnected {
-            Text("Connected")
-                .font(.caption)
-                .fontWeight(.semibold)
-                .foregroundColor(.white)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(connectedBackgroundGradient)
-                .cornerRadius(AppTheme.cornerRadius.full)
-        } else {
-            Image(systemName: "plus.circle.fill")
-                .font(.title3)
-                .foregroundStyle(AppTheme.primaryGradient)
-        }
-    }
-
-    // Computed properties to simplify type checking
-    private var iconBackgroundFill: AnyShapeStyle {
-        if isConnected {
-            return AnyShapeStyle(AppTheme.primaryGradient.opacity(0.2))
-        } else {
-            return AnyShapeStyle(AppTheme.glassMaterial)
-        }
-    }
-
-    private var iconSystemName: String {
-        isConnected ? "checkmark.circle.fill" : "sensor.tag.radiowaves.forward.fill"
-    }
-
-    private var iconForegroundGradient: AnyShapeStyle {
-        if isConnected {
-            return AnyShapeStyle(AppTheme.primaryGradient)
-        } else {
-            return AnyShapeStyle(AppTheme.primaryGradient)
-        }
-    }
-
-    private var connectedBackgroundGradient: AnyShapeStyle {
-        AnyShapeStyle(AppTheme.primaryGradient.opacity(0.3))
+        .buttonStyle(ScalePressStyle())
     }
 }
 
@@ -822,7 +768,7 @@ struct ModernDeviceRow: View {
 
 struct DashboardView_Previews: PreviewProvider {
     static var previews: some View {
-        DashboardView()
+        NavigationView { DashboardView() }
             .preferredColorScheme(.dark)
     }
 }
