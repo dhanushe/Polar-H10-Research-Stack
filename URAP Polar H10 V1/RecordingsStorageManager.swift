@@ -269,6 +269,13 @@ class RecordingsStorageManager {
                 let rrURL = exportFolder.appendingPathComponent("\(prefix)_rr.csv")
                 try rrCSV.write(to: rrURL, atomically: true, encoding: .utf8)
 
+                // Accelerometer CSV (only if there's data)
+                if !sensor.accelerometerData.isEmpty {
+                    let accCSV = sensor.accelerometerCSV()
+                    let accURL = exportFolder.appendingPathComponent("\(prefix)_acc.csv")
+                    try accCSV.write(to: accURL, atomically: true, encoding: .utf8)
+                }
+
                 // Statistics CSV
                 let statsCSV = sensor.statisticsCSV()
                 let statsURL = exportFolder.appendingPathComponent("\(prefix)_statistics.csv")
@@ -308,9 +315,9 @@ class RecordingsStorageManager {
         csv += "Average RMSSD (ms),\(String(format: "%.2f", recording.averageRMSSD))\n\n"
 
         csv += "Sensors\n"
-        csv += "Sensor ID,Sensor Name,HR Samples,RR Samples,Avg HR,SDNN,RMSSD\n"
+        csv += "Sensor ID,Sensor Name,HR Samples,RR Samples,ACC Samples,Avg HR,SDNN,RMSSD\n"
         for sensor in recording.sensorRecordings {
-            csv += "\(sensor.sensorId),\(sensor.sensorName),\(sensor.heartRateData.count),\(sensor.rrIntervalData.count),\(sensor.statistics.averageHeartRate),\(String(format: "%.2f", sensor.statistics.sdnn)),\(String(format: "%.2f", sensor.statistics.rmssd))\n"
+            csv += "\(sensor.sensorId),\(sensor.sensorName),\(sensor.heartRateData.count),\(sensor.rrIntervalData.count),\(sensor.accelerometerData.count),\(sensor.statistics.averageHeartRate),\(String(format: "%.2f", sensor.statistics.sdnn)),\(String(format: "%.2f", sensor.statistics.rmssd))\n"
         }
 
         return csv

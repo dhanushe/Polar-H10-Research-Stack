@@ -43,6 +43,29 @@ struct RRIntervalDataPoint: Identifiable, Codable {
     }
 }
 
+struct AccelerometerDataPoint: Identifiable, Codable {
+    let id: UUID
+    let timestamp: Date
+    let monotonicTimestamp: TimeInterval
+    let x: Int32  // milligravity (mG)
+    let y: Int32
+    let z: Int32
+
+    init(timestamp: Date, monotonicTimestamp: TimeInterval, x: Int32, y: Int32, z: Int32) {
+        self.id = UUID()
+        self.timestamp = timestamp
+        self.monotonicTimestamp = monotonicTimestamp
+        self.x = x
+        self.y = y
+        self.z = z
+    }
+
+    /// Magnitude of the acceleration vector in mG
+    var magnitude: Double {
+        sqrt(Double(x * x) + Double(y * y) + Double(z * z))
+    }
+}
+
 // MARK: - HRV Window Configuration
 
 enum HRVWindow: String, CaseIterable, Identifiable {
@@ -93,6 +116,13 @@ class ConnectedSensor: ObservableObject, Identifiable {
     // Display data for charts (rolling buffers)
     @Published var heartRateHistory: [HeartRateDataPoint] = []
     @Published var rrIntervalHistory: [RRIntervalDataPoint] = []
+    @Published var accelerometerHistory: [AccelerometerDataPoint] = []
+
+    // Live accelerometer values
+    @Published var accX: Int32 = 0
+    @Published var accY: Int32 = 0
+    @Published var accZ: Int32 = 0
+    @Published var isAccStreaming: Bool = false
 
     // Statistics (updated as data arrives)
     @Published var minHeartRate: UInt8 = 0
@@ -117,6 +147,8 @@ class ConnectedSensor: ObservableObject, Identifiable {
     }
 
     var hrDisposable: Disposable?
+    var accDisposable: Disposable?
+    var accSettingsDisposable: Disposable?
 
     init(deviceId: String, deviceName: String) {
         self.id = deviceId
@@ -126,6 +158,8 @@ class ConnectedSensor: ObservableObject, Identifiable {
 
     deinit {
         hrDisposable?.dispose()
+        accDisposable?.dispose()
+        accSettingsDisposable?.dispose()
         print("ConnectedSensor \(id) deallocated")
     }
 
@@ -173,6 +207,21 @@ class ConnectedSensor: ObservableObject, Identifiable {
         // Trim to 10 minutes for HRV analysis window
         let cutoff = now.addingTimeInterval(-600)
         rrIntervalHistory.removeAll { $0.timestamp < cutoff }
+    }
+
+    /// Add accelerometer data point for live chart display
+    func addAccelerometerDataPoint(x: Int32, y: Int32, z: Int32) {
+        let now = Date()
+        let dataPoint = AccelerometerDataPoint(
+            timestamp: now,
+            monotonicTimestamp: ProcessInfo.processInfo.systemUptime,
+            x: x, y: y, z: z
+        )
+        accelerometerHistory.append(dataPoint)
+
+        // Trim to 2 minutes for display (ACC is high frequency)
+        let cutoff = now.addingTimeInterval(-120)
+        accelerometerHistory.removeAll { $0.timestamp < cutoff }
     }
 
     /// Calculate HRV metrics from display buffer
@@ -357,6 +406,8 @@ class PolarManager: NSObject, ObservableObject {
         reconnectionAttempts.removeValue(forKey: deviceId)
 
         sensor.hrDisposable?.dispose()
+        sensor.accDisposable?.dispose()
+        sensor.accSettingsDisposable?.dispose()
 
         do {
             try api.disconnectFromDevice(deviceId)
@@ -509,9 +560,12 @@ class PolarManager: NSObject, ObservableObject {
         guard let sensor = sensors[deviceId] else { return }
 
         sensor.hrDisposable?.dispose()
+        sensor.accDisposable?.dispose()
+        sensor.accSettingsDisposable?.dispose()
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             self?.startHeartRateStream(for: deviceId)
+            self?.startAccelerometerStream(for: deviceId)
         }
     }
 
@@ -568,6 +622,74 @@ class PolarManager: NSObject, ObservableObject {
 
                 case .completed:
                     print("HR stream completed for \(deviceId)")
+                }
+            }
+    }
+
+    // MARK: - Accelerometer Streaming
+
+    private func startAccelerometerStream(for deviceId: String) {
+        guard let sensor = sensors[deviceId],
+              let api = api else { return }
+
+        // Dispose any existing subscriptions
+        sensor.accDisposable?.dispose()
+        sensor.accSettingsDisposable?.dispose()
+
+        // Request available ACC settings, then start streaming
+        sensor.accSettingsDisposable = api.requestStreamSettings(deviceId, feature: .acc)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onSuccess: { [weak self] settings in
+                // Use 50Hz sample rate for a good balance of detail vs bandwidth
+                let selectedSettings = settings.maxSettings()
+                self?.startAccStream(deviceId: deviceId, sensor: sensor, settings: selectedSettings, api: api)
+            }, onFailure: { error in
+                print("Failed to get ACC settings for \(deviceId): \(error.localizedDescription)")
+            })
+    }
+
+    private func startAccStream(deviceId: String, sensor: ConnectedSensor, settings: PolarSensorSetting, api: PolarBleApi) {
+        sensor.accDisposable = api.startAccStreaming(deviceId, settings: settings)
+            .observe(on: MainScheduler.instance)
+            .subscribe { [weak self, weak sensor] event in
+                guard let self = self, let sensor = sensor else { return }
+
+                switch event {
+                case .next(let data):
+                    sensor.isAccStreaming = true
+
+                    // Process batch of ACC samples
+                    for sample in data.samples {
+                        let x = sample.x
+                        let y = sample.y
+                        let z = sample.z
+
+                        // Update live display values (last sample in batch)
+                        sensor.accX = x
+                        sensor.accY = y
+                        sensor.accZ = z
+                        sensor.lastUpdate = Date()
+
+                        // Add to display buffer (downsample: only every 5th sample for chart)
+                        // Full data goes to recording
+                        sensor.addAccelerometerDataPoint(x: x, y: y, z: z)
+
+                        // Route to recording coordinator
+                        Task { @MainActor in
+                            await self.recordingCoordinator.routeAccelerometerData(
+                                sensorId: deviceId,
+                                x: x, y: y, z: z
+                            )
+                        }
+                    }
+
+                case .error(let error):
+                    print("ACC stream error for \(deviceId): \(error.localizedDescription)")
+                    sensor.isAccStreaming = false
+
+                case .completed:
+                    print("ACC stream completed for \(deviceId)")
+                    sensor.isAccStreaming = false
                 }
             }
     }
@@ -650,6 +772,8 @@ extension PolarManager: PolarBleApiDeviceFeaturesObserver {
             switch feature {
             case .feature_hr:
                 self.startHeartRateStream(for: identifier)
+            case .feature_polar_online_streaming:
+                self.startAccelerometerStream(for: identifier)
             default:
                 break
             }

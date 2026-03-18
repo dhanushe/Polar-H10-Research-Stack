@@ -50,7 +50,11 @@ struct RecordingSession: Identifiable, Codable {
     }
 
     var totalDataPoints: Int {
-        sensorRecordings.reduce(0) { $0 + $1.heartRateData.count + $1.rrIntervalData.count }
+        sensorRecordings.reduce(0) { $0 + $1.heartRateData.count + $1.rrIntervalData.count + $1.accelerometerData.count }
+    }
+
+    var totalAccelerometerSamples: Int {
+        sensorRecordings.reduce(0) { $0 + $1.accelerometerData.count }
     }
 
     var averageSDNN: Double {

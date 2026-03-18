@@ -26,6 +26,7 @@ class RecordingCoordinator: ObservableObject {
     // Live data for UI display (updated from sensor streams)
     @Published var liveHeartRates: [String: UInt8] = [:]
     @Published var liveRRIntervals: [String: UInt16] = [:]
+    @Published var liveAccelerometer: [String: (x: Int32, y: Int32, z: Int32)] = [:]
 
     // MARK: - Private Properties
 
@@ -153,6 +154,18 @@ class RecordingCoordinator: ObservableObject {
         await collector.addRRIntervalDataPoint(value)
     }
 
+    /// Route accelerometer data from PolarManager to the appropriate collector
+    func routeAccelerometerData(sensorId: String, x: Int32, y: Int32, z: Int32) async {
+        // Update live display
+        liveAccelerometer[sensorId] = (x, y, z)
+
+        // Only collect if actively recording
+        guard case .recording = state else { return }
+
+        guard let collector = collectors[sensorId] else { return }
+        await collector.addAccelerometerDataPoint(x: x, y: y, z: z)
+    }
+
     // MARK: - Session Info
 
     /// Get current session duration
@@ -228,6 +241,7 @@ class RecordingCoordinator: ObservableObject {
         collectors.removeAll()
         liveHeartRates.removeAll()
         liveRRIntervals.removeAll()
+        liveAccelerometer.removeAll()
         activeSensorCount = 0
         currentRecordingId = nil
     }
@@ -250,6 +264,7 @@ class RecordingCoordinator: ObservableObject {
         collectors.removeValue(forKey: id)
         liveHeartRates.removeValue(forKey: id)
         liveRRIntervals.removeValue(forKey: id)
+        liveAccelerometer.removeValue(forKey: id)
         activeSensorCount = collectors.count
         print("Removed sensor \(id) from recording")
     }

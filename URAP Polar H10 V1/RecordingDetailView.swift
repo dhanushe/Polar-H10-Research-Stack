@@ -422,6 +422,15 @@ struct RecordingDetailView: View {
                         color: .cyan
                     )
                 }
+
+                if recording.totalAccelerometerSamples > 0 {
+                    SummaryCard(
+                        icon: "move.3d",
+                        title: "ACC Samples",
+                        value: "\(recording.totalAccelerometerSamples)",
+                        color: .green
+                    )
+                }
             }
         }
     }
@@ -476,6 +485,10 @@ struct RecordingDetailView: View {
 
                     if !sensor.rrIntervalData.isEmpty {
                         rrIntervalChart(for: sensor)
+                    }
+
+                    if !sensor.accelerometerData.isEmpty {
+                        accelerometerChart(for: sensor)
                     }
 
                     if sensor.statistics.sdnn > 0 || sensor.statistics.rmssd > 0 {
@@ -605,6 +618,88 @@ struct RecordingDetailView: View {
                     AxisMarks(position: .leading)
                 }
                 .frame(height: 200)
+            }
+            .padding(AppTheme.spacing.md)
+        }
+    }
+
+    // MARK: - Accelerometer Chart
+
+    private func accelerometerChart(for sensor: SensorRecording) -> some View {
+        // Downsample for chart performance
+        let data = sensor.accelerometerData
+        let stride = max(1, data.count / 500)
+        let downsampled = stride > 1 ? data.enumerated().compactMap { $0.offset.isMultiple(of: stride) ? $0.element : nil } : data
+
+        return GlassCard {
+            VStack(alignment: .leading, spacing: AppTheme.spacing.md) {
+                HStack {
+                    Image(systemName: "move.3d")
+                        .foregroundColor(.green)
+                    Text("Accelerometer (\(sensor.accelerometerData.count) samples)")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                }
+
+                Chart {
+                    ForEach(Array(downsampled.enumerated()), id: \.offset) { _, point in
+                        LineMark(
+                            x: .value("Time", point.timestamp),
+                            y: .value("X", point.x),
+                            series: .value("Axis", "X")
+                        )
+                        .foregroundStyle(.red.opacity(0.8))
+
+                        LineMark(
+                            x: .value("Time", point.timestamp),
+                            y: .value("Y", point.y),
+                            series: .value("Axis", "Y")
+                        )
+                        .foregroundStyle(.green.opacity(0.8))
+
+                        LineMark(
+                            x: .value("Time", point.timestamp),
+                            y: .value("Z", point.z),
+                            series: .value("Axis", "Z")
+                        )
+                        .foregroundStyle(.blue.opacity(0.8))
+                    }
+                }
+                .chartForegroundStyleScale([
+                    "X": Color.red, "Y": Color.green, "Z": Color.blue
+                ])
+                .chartXAxis {
+                    AxisMarks(values: .automatic(desiredCount: 5)) { value in
+                        if let date = value.as(Date.self) {
+                            AxisValueLabel {
+                                Text(date, format: .dateTime.minute().second())
+                                    .font(.caption2)
+                            }
+                        }
+                    }
+                }
+                .chartYAxis {
+                    AxisMarks(position: .leading)
+                }
+                .frame(height: 200)
+
+                HStack(spacing: AppTheme.spacing.lg) {
+                    HStack(spacing: 4) {
+                        Circle().fill(.red).frame(width: 8, height: 8)
+                        Text("X").font(.caption).foregroundColor(.secondary)
+                    }
+                    HStack(spacing: 4) {
+                        Circle().fill(.green).frame(width: 8, height: 8)
+                        Text("Y").font(.caption).foregroundColor(.secondary)
+                    }
+                    HStack(spacing: 4) {
+                        Circle().fill(.blue).frame(width: 8, height: 8)
+                        Text("Z").font(.caption).foregroundColor(.secondary)
+                    }
+                    Spacer()
+                    Text("mG").font(.caption).foregroundColor(.secondary)
+                }
             }
             .padding(AppTheme.spacing.md)
         }
