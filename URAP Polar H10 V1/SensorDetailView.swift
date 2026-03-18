@@ -40,6 +40,11 @@ struct SensorDetailView: View {
                     // HRV Metrics
                     hrvMetricsCard
 
+                    // Accelerometer Section
+                    if sensor.isAccStreaming {
+                        accelerometerCard
+                    }
+
                     // Charts Section
                     chartsSection
                 }
@@ -181,6 +186,55 @@ struct SensorDetailView: View {
                             .font(.caption)
                             .foregroundColor(.primary.opacity(0.7))
                     }
+                }
+            }
+            .padding(AppTheme.spacing.lg)
+        }
+    }
+
+    // MARK: - Accelerometer Card
+
+    private var accelerometerCard: some View {
+        GlassCard {
+            VStack(alignment: .leading, spacing: AppTheme.spacing.md) {
+                GradientText("Accelerometer", gradient: LinearGradient(colors: [.green, .teal], startPoint: .leading, endPoint: .trailing), font: .headline)
+
+                HStack(spacing: AppTheme.spacing.lg) {
+                    AccAxisDisplay(axis: "X", value: sensor.accX, color: .red)
+                    AccAxisDisplay(axis: "Y", value: sensor.accY, color: .green)
+                    AccAxisDisplay(axis: "Z", value: sensor.accZ, color: .blue)
+                }
+
+                if !filteredAccelerometerData.isEmpty {
+                    Chart {
+                        ForEach(Array(filteredAccelerometerData.enumerated()), id: \.offset) { _, point in
+                            LineMark(
+                                x: .value("Time", point.timestamp),
+                                y: .value("mG", point.magnitude)
+                            )
+                            .foregroundStyle(
+                                LinearGradient(colors: [.green, .teal], startPoint: .leading, endPoint: .trailing)
+                            )
+                            .interpolationMethod(.catmullRom)
+                        }
+                    }
+                    .chartXAxis {
+                        AxisMarks(values: .stride(by: .second, count: 15)) {
+                            AxisGridLine()
+                            AxisValueLabel(format: .dateTime.minute().second(), centered: true)
+                                .font(.caption2)
+                        }
+                    }
+                    .chartYAxis {
+                        AxisMarks(position: .leading) {
+                            AxisGridLine()
+                            AxisValueLabel()
+                                .font(.caption2)
+                        }
+                    }
+                    .frame(height: 150)
+                } else {
+                    EmptyChartPlaceholder(message: "No accelerometer data")
                 }
             }
             .padding(AppTheme.spacing.lg)
@@ -427,6 +481,16 @@ struct SensorDetailView: View {
         return historyCopy.filter { $0.timestamp >= cutoffTime }
     }
 
+    private var filteredAccelerometerData: [AccelerometerDataPoint] {
+        guard !sensor.accelerometerHistory.isEmpty else { return [] }
+        let cutoffTime = Date().addingTimeInterval(-selectedTimeRange.seconds)
+        let historyCopy = sensor.accelerometerHistory
+        // Downsample for chart display: take every Nth point
+        let filtered = historyCopy.filter { $0.timestamp >= cutoffTime }
+        let stride = max(1, filtered.count / 300) // Max ~300 points on chart
+        return stride > 1 ? filtered.enumerated().compactMap { $0.offset.isMultiple(of: stride) ? $0.element : nil } : filtered
+    }
+
     // MARK: - Helper Functions
 
     private func formatDuration(_ duration: TimeInterval) -> String {
@@ -624,6 +688,32 @@ struct ChartTooltipBubble: View {
                 .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.2), radius: 8, x: 0, y: 4)
+    }
+}
+
+// MARK: - Accelerometer Axis Display
+
+struct AccAxisDisplay: View {
+    let axis: String
+    let value: Int32
+    let color: Color
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(axis)
+                .font(.caption)
+                .fontWeight(.bold)
+                .foregroundColor(color)
+
+            Text("\(value)")
+                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .foregroundColor(.primary)
+
+            Text("mG")
+                .font(.caption2)
+                .foregroundColor(.primary.opacity(0.6))
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 

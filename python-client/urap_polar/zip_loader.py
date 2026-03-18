@@ -47,7 +47,7 @@ def _parse_session_info(content: str) -> Tuple[Dict[str, Any], List[Dict[str, An
             if not row or not row[0]:
                 continue
             row = row[0]
-            # Expect at least 7 columns; sensor name may contain commas so use last 5 for numeric fields
+            # Detect format: new format has 8+ columns (with ACC Samples), old has 7+
             if len(row) >= 7:
                 def _int(s: str) -> int:
                     try:
@@ -62,20 +62,32 @@ def _parse_session_info(content: str) -> Tuple[Dict[str, Any], List[Dict[str, An
                         return 0.0
 
                 sensor_id = row[0].strip()
-                # Last 5 columns: HR Samples, RR Samples, Avg HR, SDNN, RMSSD
-                hr_samples = _int(row[-5])
-                rr_samples = _int(row[-4])
-                avg_hr = _float(row[-3])
-                sdnn = _float(row[-2])
+                # Last 5 columns are always: Avg HR, SDNN, RMSSD (with possible ACC Samples before them)
+                # New format (8+ cols): Sensor ID, Name, HR Samples, RR Samples, ACC Samples, Avg HR, SDNN, RMSSD
+                # Old format (7+ cols): Sensor ID, Name, HR Samples, RR Samples, Avg HR, SDNN, RMSSD
                 rmssd = _float(row[-1])
-                # Sensor name is everything between first and last 5 columns (handles commas in name)
-                sensor_name = ",".join(c.strip() for c in row[1:-5]) if len(row) > 7 else row[1].strip()
+                sdnn = _float(row[-2])
+                avg_hr = _float(row[-3])
+
+                if len(row) >= 8:
+                    # New format with ACC column
+                    acc_samples = _int(row[-4])
+                    rr_samples = _int(row[-5])
+                    hr_samples = _int(row[-6])
+                    sensor_name = ",".join(c.strip() for c in row[1:-6]) if len(row) > 8 else row[1].strip()
+                else:
+                    # Old format without ACC column
+                    acc_samples = 0
+                    rr_samples = _int(row[-4])
+                    hr_samples = _int(row[-5])
+                    sensor_name = ",".join(c.strip() for c in row[1:-5]) if len(row) > 7 else row[1].strip()
 
                 sensors_table.append({
                     "sensor_id": sensor_id,
                     "sensor_name": sensor_name,
                     "hr_samples": hr_samples,
                     "rr_samples": rr_samples,
+                    "acc_samples": acc_samples,
                     "avg_hr": avg_hr,
                     "sdnn": sdnn,
                     "rmssd": rmssd,
@@ -210,6 +222,34 @@ def _read_rr_csv(content: str) -> List[Dict[str, Any]]:
     return out
 
 
+def _read_acc_csv(content: str) -> List[Dict[str, Any]]:
+    """Parse ACC CSV: Timestamp, Unix Time, Monotonic Time, X (mG), Y (mG), Z (mG), Magnitude (mG)."""
+    lines = content.strip().splitlines()
+    if len(lines) < 2:
+        return []
+    out = []
+    for line in lines[1:]:
+        parts = line.split(",")
+        if len(parts) < 6:
+            continue
+        ts = _parse_iso(parts[0].strip())
+        try:
+            mono = float(parts[2].strip())
+            x = int(parts[3].strip())
+            y = int(parts[4].strip())
+            z = int(parts[5].strip())
+        except (ValueError, IndexError):
+            continue
+        out.append({
+            "timestamp": ts.isoformat() if ts else "",
+            "x": x,
+            "y": y,
+            "z": z,
+            "monotonicTimestamp": mono,
+        })
+    return out
+
+
 def _read_statistics_csv(content: str) -> Dict[str, Any]:
     """Parse statistics CSV: Metric,Value rows."""
     lines = content.strip().splitlines()
@@ -323,10 +363,12 @@ def load_from_zip(zip_path: str) -> RecordingSession:
 
             hr_data: List[Dict[str, Any]] = []
             rr_data: List[Dict[str, Any]] = []
+            acc_data: List[Dict[str, Any]] = []
             statistics: Dict[str, Any] = {}
 
             hr_path = f"{file_prefix}_hr.csv"
             rr_path = f"{file_prefix}_rr.csv"
+            acc_path = f"{file_prefix}_acc.csv"
             stats_path = f"{file_prefix}_statistics.csv"
             try:
                 hr_data = _read_hr_csv(z.read(hr_path).decode("utf-8"))
@@ -334,6 +376,10 @@ def load_from_zip(zip_path: str) -> RecordingSession:
                 pass
             try:
                 rr_data = _read_rr_csv(z.read(rr_path).decode("utf-8"))
+            except KeyError:
+                pass
+            try:
+                acc_data = _read_acc_csv(z.read(acc_path).decode("utf-8"))
             except KeyError:
                 pass
             try:
@@ -349,13 +395,16 @@ def load_from_zip(zip_path: str) -> RecordingSession:
                     "hrvSampleCount": 0,
                 }
 
-            sensor_recordings.append({
+            sensor_rec: Dict[str, Any] = {
                 "sensorId": sensor_id,
                 "sensorName": sensor_name,
                 "heartRateData": hr_data,
                 "rrIntervalData": rr_data,
                 "statistics": statistics,
-            })
+            }
+            if acc_data:
+                sensor_rec["accelerometerData"] = acc_data
+            sensor_recordings.append(sensor_rec)
 
         meta["sensorRecordings"] = sensor_recordings
         return RecordingSession(meta)

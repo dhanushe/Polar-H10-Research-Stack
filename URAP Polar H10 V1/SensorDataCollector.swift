@@ -21,6 +21,7 @@ actor SensorDataCollector {
     // Data buffers
     private var hrBuffer: [HeartRateDataPoint] = []
     private var rrBuffer: [RRIntervalDataPoint] = []
+    private var accBuffer: [AccelerometerDataPoint] = []
 
     // Statistics tracking
     private var hrSum: UInt64 = 0
@@ -80,6 +81,20 @@ actor SensorDataCollector {
         rrBuffer.append(dataPoint)
     }
 
+    /// Add an accelerometer data point (thread-safe)
+    func addAccelerometerDataPoint(x: Int32, y: Int32, z: Int32) {
+        let now = timingSession.now()
+        let wallTime = timingSession.monotonicToDate(now)
+
+        let dataPoint = AccelerometerDataPoint(
+            timestamp: wallTime,
+            monotonicTimestamp: now,
+            x: x, y: y, z: z
+        )
+
+        accBuffer.append(dataPoint)
+    }
+
     // MARK: - Data Capture
 
     /// Capture all collected data as a SensorRecording
@@ -113,6 +128,7 @@ actor SensorDataCollector {
             sensorName: sensorName,
             heartRateData: hrBuffer,
             rrIntervalData: rrBuffer,
+            accelerometerData: accBuffer,
             statistics: statistics,
             timingMetadata: timing
         )
@@ -121,8 +137,8 @@ actor SensorDataCollector {
     // MARK: - Statistics
 
     /// Get current data point counts
-    var dataPointCounts: (hr: Int, rr: Int) {
-        return (hrBuffer.count, rrBuffer.count)
+    var dataPointCounts: (hr: Int, rr: Int, acc: Int) {
+        return (hrBuffer.count, rrBuffer.count, accBuffer.count)
     }
 
     /// Get current statistics
@@ -188,6 +204,7 @@ actor SensorDataCollector {
     func reset() {
         hrBuffer.removeAll()
         rrBuffer.removeAll()
+        accBuffer.removeAll()
         hrSum = 0
         hrCount = 0
         minHR = UInt8.max

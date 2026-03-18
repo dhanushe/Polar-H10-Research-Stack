@@ -19,6 +19,7 @@ struct RawDataViewerSheet: View {
     enum DataType: String, CaseIterable {
         case heartRate = "Heart Rate"
         case rrInterval = "RR Intervals"
+        case accelerometer = "Accelerometer"
     }
 
     // Color palette for sensor distinction
@@ -34,6 +35,14 @@ struct RawDataViewerSheet: View {
             return nil
         }
         return recording.sensorRecordings[selectedSensorIndex]
+    }
+
+    private var dataTypeUnit: String {
+        switch selectedDataType {
+        case .heartRate: return "BPM"
+        case .rrInterval: return "ms"
+        case .accelerometer: return "mG"
+        }
     }
 
     // Computed property to check if current selection is valid
@@ -66,6 +75,16 @@ struct RawDataViewerSheet: View {
                     timestamp: point.timestamp,
                     value: "\(point.value)",
                     unit: "ms",
+                    monotonicTime: point.monotonicTimestamp
+                )
+            }
+        case .accelerometer:
+            rows = sensor.accelerometerData.enumerated().map { index, point in
+                DataRow(
+                    index: index + 1,
+                    timestamp: point.timestamp,
+                    value: "(\(point.x), \(point.y), \(point.z))",
+                    unit: "mG",
                     monotonicTime: point.monotonicTimestamp
                 )
             }
@@ -102,6 +121,14 @@ struct RawDataViewerSheet: View {
                 min: values.min() ?? 0,
                 max: values.max() ?? 0,
                 average: values.isEmpty ? 0 : values.reduce(0, +) / Double(values.count)
+            )
+        case .accelerometer:
+            let magnitudes = sensor.accelerometerData.map { $0.magnitude }
+            return DataStats(
+                count: magnitudes.count,
+                min: magnitudes.min() ?? 0,
+                max: magnitudes.max() ?? 0,
+                average: magnitudes.isEmpty ? 0 : magnitudes.reduce(0, +) / Double(magnitudes.count)
             )
         }
     }
@@ -224,7 +251,7 @@ struct RawDataViewerSheet: View {
 
             Spacer()
 
-            Image(systemName: selectedDataType == .heartRate ? "heart.fill" : "waveform.path.ecg")
+            Image(systemName: selectedDataType == .heartRate ? "heart.fill" : selectedDataType == .rrInterval ? "waveform.path.ecg" : "move.3d")
                 .font(.caption)
                 .foregroundColor(currentSensorColor)
         }
@@ -330,14 +357,14 @@ struct RawDataViewerSheet: View {
 
                     Spacer()
 
-                    Image(systemName: selectedDataType == .heartRate ? "heart.fill" : "waveform.path.ecg")
+                    Image(systemName: selectedDataType == .heartRate ? "heart.fill" : selectedDataType == .rrInterval ? "waveform.path.ecg" : "move.3d")
                         .foregroundColor(currentSensorColor)
                 }
 
                 HStack(spacing: AppTheme.spacing.lg) {
-                    StatItem(label: "Min", value: String(format: "%.0f", dataStats.min), unit: selectedDataType == .heartRate ? "BPM" : "ms")
-                    StatItem(label: "Avg", value: String(format: "%.0f", dataStats.average), unit: selectedDataType == .heartRate ? "BPM" : "ms")
-                    StatItem(label: "Max", value: String(format: "%.0f", dataStats.max), unit: selectedDataType == .heartRate ? "BPM" : "ms")
+                    StatItem(label: "Min", value: String(format: "%.0f", dataStats.min), unit: dataTypeUnit)
+                    StatItem(label: "Avg", value: String(format: "%.0f", dataStats.average), unit: dataTypeUnit)
+                    StatItem(label: "Max", value: String(format: "%.0f", dataStats.max), unit: dataTypeUnit)
                 }
             }
             .padding(AppTheme.spacing.md)
@@ -520,7 +547,12 @@ struct RawDataViewerSheet: View {
     }
 
     private func generateCSV() -> String {
-        var csv = "Index,Time,Value (\(selectedDataType == .heartRate ? "BPM" : "ms")),Unix Timestamp,Monotonic Time\n"
+        var csv: String
+        if selectedDataType == .accelerometer {
+            csv = "Index,Time,Value (X Y Z mG),Unix Timestamp,Monotonic Time\n"
+        } else {
+            csv = "Index,Time,Value (\(dataTypeUnit)),Unix Timestamp,Monotonic Time\n"
+        }
 
         for row in filteredData {
             csv += "\(row.index),\(row.formattedTime),\(row.value),\(row.timestamp.timeIntervalSince1970),\(row.monotonicTime)\n"
