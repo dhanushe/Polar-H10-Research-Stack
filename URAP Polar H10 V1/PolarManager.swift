@@ -43,6 +43,20 @@ struct RRIntervalDataPoint: Identifiable, Codable {
     }
 }
 
+struct AccelerometerDataPoint: Identifiable, Codable {
+    let id: UUID
+    let timestamp: Date
+    let monotonicTimestamp: TimeInterval
+    let magnitude: Double   // 1-second average filtered vector magnitude, mG
+
+    init(timestamp: Date, monotonicTimestamp: TimeInterval, magnitude: Double) {
+        self.id = UUID()
+        self.timestamp = timestamp
+        self.monotonicTimestamp = monotonicTimestamp
+        self.magnitude = magnitude
+    }
+}
+
 // MARK: - HRV Window Configuration
 
 enum HRVWindow: String, CaseIterable, Identifiable {
@@ -117,6 +131,17 @@ class ConnectedSensor: ObservableObject, Identifiable {
     }
 
     var hrDisposable: Disposable?
+    var accDisposable: Disposable?
+
+    // Accelerometer live display (scalar magnitude)
+    @Published var currentAccMagnitude: Double = 0
+    @Published var accMagnitudeHistory: [AccelerometerDataPoint] = []
+
+    // Accelerometer live 3D display (raw per-sample, unfiltered, for visualization)
+    @Published var accX: Double = 0
+    @Published var accY: Double = 0
+    @Published var accZ: Double = 0
+    @Published var accVectorHistory: [(x: Double, y: Double, z: Double)] = []
 
     init(deviceId: String, deviceName: String) {
         self.id = deviceId
@@ -126,6 +151,7 @@ class ConnectedSensor: ObservableObject, Identifiable {
 
     deinit {
         hrDisposable?.dispose()
+        accDisposable?.dispose()
         print("ConnectedSensor \(id) deallocated")
     }
 
@@ -202,6 +228,34 @@ class ConnectedSensor: ObservableObject, Identifiable {
             sumSquaredDiffs += diff * diff
         }
         rmssd = sqrt(sumSquaredDiffs / Double(values.count - 1))
+    }
+
+    /// Update live 3D vector display with raw per-sample values
+    func updateLiveAccVector(x: Double, y: Double, z: Double) {
+        accX = x
+        accY = y
+        accZ = z
+        accVectorHistory.append((x: x, y: y, z: z))
+        // Keep last 100 samples (~4 seconds at 25 Hz) for the 3D trail
+        if accVectorHistory.count > 100 {
+            accVectorHistory.removeFirst(accVectorHistory.count - 100)
+        }
+    }
+
+    /// Add a 1-second averaged accelerometer magnitude for live display
+    func addAccDataPoint(_ magnitude: Double) {
+        let now = Date()
+        let point = AccelerometerDataPoint(
+            timestamp: now,
+            monotonicTimestamp: ProcessInfo.processInfo.systemUptime,
+            magnitude: magnitude
+        )
+        currentAccMagnitude = magnitude
+        accMagnitudeHistory.append(point)
+
+        // Keep last 5 minutes (1 point per second = max 300 points)
+        let cutoff = now.addingTimeInterval(-300)
+        accMagnitudeHistory.removeAll { $0.timestamp < cutoff }
     }
 
     enum ConnectionState {
@@ -357,6 +411,7 @@ class PolarManager: NSObject, ObservableObject {
         reconnectionAttempts.removeValue(forKey: deviceId)
 
         sensor.hrDisposable?.dispose()
+        sensor.accDisposable?.dispose()
 
         do {
             try api.disconnectFromDevice(deviceId)
@@ -509,10 +564,100 @@ class PolarManager: NSObject, ObservableObject {
         guard let sensor = sensors[deviceId] else { return }
 
         sensor.hrDisposable?.dispose()
+        sensor.accDisposable?.dispose()
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             self?.startHeartRateStream(for: deviceId)
+            self?.startAccelerometerStream(for: deviceId)
         }
+    }
+
+    private func startAccelerometerStream(for deviceId: String) {
+        guard let sensor = sensors[deviceId],
+              let api = api else {
+            print("ACC stream: sensor or API not ready for \(deviceId)")
+            return
+        }
+        print("ACC stream: starting for \(deviceId)")
+
+        // Dispose any existing subscription to prevent double-subscription
+        sensor.accDisposable?.dispose()
+
+        // Break into typed steps to help the Swift type checker
+        let settingsSingle = api.requestStreamSettings(deviceId, feature: PolarDeviceDataType.acc)
+
+        let accObservable: Observable<PolarAccData> = settingsSingle
+            .asObservable()
+            .flatMap { [weak self] (availableSettings: PolarSensorSetting) -> Observable<PolarAccData> in
+                guard let self = self, let api = self.api else {
+                    return Observable.error(NSError(domain: "PolarManager", code: -1,
+                                                    userInfo: [NSLocalizedDescriptionKey: "API unavailable"]))
+                }
+                // Build a [SettingType: UInt32] dict from max values, then override sample rate
+                var settingsDict: [PolarSensorSetting.SettingType: UInt32] = [:]
+                for (key, values) in availableSettings.maxSettings().settings {
+                    if let val = values.max() { settingsDict[key] = val }
+                }
+                // Use 25 Hz if available; otherwise keep the max
+                if let rates = availableSettings.settings[PolarSensorSetting.SettingType.sampleRate],
+                   rates.contains(25) {
+                    settingsDict[PolarSensorSetting.SettingType.sampleRate] = 25
+                }
+                let chosen: PolarSensorSetting
+                do {
+                    chosen = try PolarSensorSetting(settingsDict)
+                } catch {
+                    return Observable.error(error)
+                }
+                return api.startAccStreaming(deviceId, settings: chosen)
+            }
+
+        sensor.accDisposable = accObservable
+            .observe(on: MainScheduler.instance)
+            .subscribe { [weak self, weak sensor] event in
+                guard let self = self, let sensor = sensor else { return }
+
+                switch event {
+                case .next(let accData):
+                    // PolarAccData = [(timeStamp: UInt64, x: Int32, y: Int32, z: Int32)]
+                    print("ACC stream: received \(accData.count) samples from \(deviceId)")
+                    let samples: [(x: Int32, y: Int32, z: Int32)] = accData.map { (x: $0.x, y: $0.y, z: $0.z) }
+
+                    // Feed all samples to the 3D vector history for smooth trail visualization
+                    for s in samples {
+                        sensor.updateLiveAccVector(
+                            x: Double(s.x),
+                            y: Double(s.y),
+                            z: Double(s.z)
+                        )
+                    }
+
+                    // Update scalar magnitude display from first sample
+                    if let first = samples.first {
+                        let rawMag = sqrt(
+                            Double(first.x) * Double(first.x) +
+                            Double(first.y) * Double(first.y) +
+                            Double(first.z) * Double(first.z)
+                        )
+                        sensor.addAccDataPoint(rawMag)
+                    }
+
+                    // Route raw samples to RecordingCoordinator (actor does DSP filtering)
+                    let deviceIdCopy = deviceId
+                    Task { @MainActor in
+                        await self.recordingCoordinator.routeAccData(
+                            sensorId: deviceIdCopy,
+                            samples: samples
+                        )
+                    }
+
+                case .error(let error):
+                    print("ACC stream error for \(deviceId): \(error.localizedDescription)")
+
+                case .completed:
+                    print("ACC stream completed for \(deviceId)")
+                }
+            }
     }
 
     private func startHeartRateStream(for deviceId: String) {
@@ -650,6 +795,9 @@ extension PolarManager: PolarBleApiDeviceFeaturesObserver {
             switch feature {
             case .feature_hr:
                 self.startHeartRateStream(for: identifier)
+            case .feature_polar_online_streaming:
+                // Primary trigger for ACC (and other online streams)
+                self.startAccelerometerStream(for: identifier)
             default:
                 break
             }
@@ -658,7 +806,17 @@ extension PolarManager: PolarBleApiDeviceFeaturesObserver {
 
     func ftpFeatureReady(_ identifier: String) {}
 
-    func streamingFeaturesReady(_ identifier: String, streamingFeatures: Set<PolarBleSdk.PolarDeviceDataType>) {}
+    func streamingFeaturesReady(_ identifier: String, streamingFeatures: Set<PolarBleSdk.PolarDeviceDataType>) {
+        // Secondary trigger — fires with explicit data type list
+        // ACC may already be starting from bleSdkFeatureReady; the dispose-before-subscribe
+        // guard in startAccelerometerStream prevents double-subscription
+        print("streamingFeaturesReady for \(identifier): \(streamingFeatures)")
+        if streamingFeatures.contains(.acc) {
+            DispatchQueue.main.async {
+                self.startAccelerometerStream(for: identifier)
+            }
+        }
+    }
 }
 
 // MARK: - PolarBleApiPowerStateObserver

@@ -21,15 +21,20 @@ actor SensorDataCollector {
     // Data buffers
     private var hrBuffer: [HeartRateDataPoint] = []
     private var rrBuffer: [RRIntervalDataPoint] = []
+    private var accBuffer: [AccelerometerDataPoint] = []
 
     // Statistics tracking
     private var hrSum: UInt64 = 0
     private var hrCount: Int = 0
     private var minHR: UInt8 = UInt8.max
     private var maxHR: UInt8 = 0
+    private var accCount: Int = 0
 
     // HRV calculation buffer
     private let hrvWindow: TimeInterval = 300 // 5 minutes
+
+    // Accelerometer DSP processor
+    private var accProcessor = AccelerometerProcessor()
 
     // MARK: - Initialization
 
@@ -80,6 +85,24 @@ actor SensorDataCollector {
         rrBuffer.append(dataPoint)
     }
 
+    /// Process raw accelerometer samples through the DSP pipeline.
+    /// Each completed 1-second window (25 samples) appends one AccelerometerDataPoint.
+    func addAccSamples(_ samples: [(x: Int32, y: Int32, z: Int32)]) {
+        for sample in samples {
+            if let avg = accProcessor.processSample(x: sample.x, y: sample.y, z: sample.z) {
+                let now = timingSession.now()
+                let wallTime = timingSession.monotonicToDate(now)
+                let point = AccelerometerDataPoint(
+                    timestamp: wallTime,
+                    monotonicTimestamp: now,
+                    magnitude: avg
+                )
+                accBuffer.append(point)
+                accCount += 1
+            }
+        }
+    }
+
     // MARK: - Data Capture
 
     /// Capture all collected data as a SensorRecording
@@ -97,7 +120,8 @@ actor SensorDataCollector {
             sdnn: calculateSDNN(),
             rmssd: calculateRMSSD(),
             hrvWindow: "5 Minutes",
-            hrvSampleCount: rrBuffer.count
+            hrvSampleCount: rrBuffer.count,
+            totalAccSamples: accCount
         )
 
         let timing = TimingMetadata(
@@ -113,6 +137,7 @@ actor SensorDataCollector {
             sensorName: sensorName,
             heartRateData: hrBuffer,
             rrIntervalData: rrBuffer,
+            accelerometerData: accBuffer,
             statistics: statistics,
             timingMetadata: timing
         )
@@ -188,10 +213,13 @@ actor SensorDataCollector {
     func reset() {
         hrBuffer.removeAll()
         rrBuffer.removeAll()
+        accBuffer.removeAll()
         hrSum = 0
         hrCount = 0
         minHR = UInt8.max
         maxHR = 0
+        accCount = 0
+        accProcessor.reset()
         timingSession = TimingSession(sessionId: sensorId)
     }
 }

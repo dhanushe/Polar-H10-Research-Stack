@@ -34,6 +34,12 @@ struct SensorDetailView: View {
                     // Primary Heart Rate Display
                     primaryHeartRateCard
 
+                    // Accelerometer Movement
+                    accMovementCard
+
+                    // 3D Accelerometer Visualization
+                    Accelerometer3DVizCard(sensor: sensor)
+
                     // Quick Stats
                     quickStatsGrid
 
@@ -106,6 +112,44 @@ struct SensorDetailView: View {
                     Text("Waiting for data...")
                         .font(.caption)
                         .foregroundColor(.primary.opacity(0.7))
+                }
+            }
+            .padding(AppTheme.spacing.lg)
+        }
+    }
+
+    // MARK: - Accelerometer Movement Card
+
+    private var accMovementCard: some View {
+        GlassCard {
+            VStack(spacing: AppTheme.spacing.sm) {
+                HStack {
+                    Image(systemName: "gyroscope")
+                        .foregroundColor(.orange)
+                    Text("Movement")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                    Spacer()
+                    Text("1s avg · filtered")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+
+                if sensor.currentAccMagnitude > 0 {
+                    HStack(alignment: .lastTextBaseline, spacing: 4) {
+                        Text(String(format: "%.1f", sensor.currentAccMagnitude))
+                            .font(.system(size: 36, weight: .bold, design: .rounded))
+                            .foregroundColor(.orange)
+                        Text("mG")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                } else {
+                    Text("Waiting for data...")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .padding(.vertical, 8)
                 }
             }
             .padding(AppTheme.spacing.lg)

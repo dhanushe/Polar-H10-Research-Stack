@@ -15,12 +15,13 @@ struct SensorRecording: Identifiable, Codable {
     let sensorName: String
     let heartRateData: [HeartRateDataPoint]
     let rrIntervalData: [RRIntervalDataPoint]
+    let accelerometerData: [AccelerometerDataPoint]
     let statistics: SensorStatistics
     let timingMetadata: TimingMetadata
 
     // Computed properties
     var dataPointCount: Int {
-        heartRateData.count + rrIntervalData.count
+        heartRateData.count + rrIntervalData.count + accelerometerData.count
     }
 
     var duration: TimeInterval {
@@ -29,6 +30,36 @@ struct SensorRecording: Identifiable, Codable {
             return 0
         }
         return last.timeIntervalSince(first)
+    }
+
+    // Explicit memberwise init (keeps accelerometerData optional for call sites)
+    init(id: String, sensorId: String, sensorName: String,
+         heartRateData: [HeartRateDataPoint],
+         rrIntervalData: [RRIntervalDataPoint],
+         accelerometerData: [AccelerometerDataPoint] = [],
+         statistics: SensorStatistics,
+         timingMetadata: TimingMetadata) {
+        self.id = id
+        self.sensorId = sensorId
+        self.sensorName = sensorName
+        self.heartRateData = heartRateData
+        self.rrIntervalData = rrIntervalData
+        self.accelerometerData = accelerometerData
+        self.statistics = statistics
+        self.timingMetadata = timingMetadata
+    }
+
+    // Backward-compatible decoder: old recordings lack accelerometerData — default to []
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        sensorId = try c.decode(String.self, forKey: .sensorId)
+        sensorName = try c.decode(String.self, forKey: .sensorName)
+        heartRateData = try c.decode([HeartRateDataPoint].self, forKey: .heartRateData)
+        rrIntervalData = try c.decode([RRIntervalDataPoint].self, forKey: .rrIntervalData)
+        accelerometerData = (try? c.decode([AccelerometerDataPoint].self, forKey: .accelerometerData)) ?? []
+        statistics = try c.decode(SensorStatistics.self, forKey: .statistics)
+        timingMetadata = try c.decode(TimingMetadata.self, forKey: .timingMetadata)
     }
 }
 
@@ -44,6 +75,7 @@ struct SensorStatistics: Codable {
     let rmssd: Double
     let hrvWindow: String
     let hrvSampleCount: Int
+    let totalAccSamples: Int
 
     var formattedSDNN: String {
         sdnn > 0 ? String(format: "%.1f ms", sdnn) : "N/A"
@@ -51,6 +83,35 @@ struct SensorStatistics: Codable {
 
     var formattedRMSSD: String {
         rmssd > 0 ? String(format: "%.1f ms", rmssd) : "N/A"
+    }
+
+    // Explicit init with default for totalAccSamples (backward compat at call sites)
+    init(minHeartRate: UInt8, maxHeartRate: UInt8, averageHeartRate: UInt8,
+         totalHeartRateSamples: Int, sdnn: Double, rmssd: Double,
+         hrvWindow: String, hrvSampleCount: Int, totalAccSamples: Int = 0) {
+        self.minHeartRate = minHeartRate
+        self.maxHeartRate = maxHeartRate
+        self.averageHeartRate = averageHeartRate
+        self.totalHeartRateSamples = totalHeartRateSamples
+        self.sdnn = sdnn
+        self.rmssd = rmssd
+        self.hrvWindow = hrvWindow
+        self.hrvSampleCount = hrvSampleCount
+        self.totalAccSamples = totalAccSamples
+    }
+
+    // Backward-compatible decoder: old recordings lack totalAccSamples — default to 0
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        minHeartRate = try c.decode(UInt8.self, forKey: .minHeartRate)
+        maxHeartRate = try c.decode(UInt8.self, forKey: .maxHeartRate)
+        averageHeartRate = try c.decode(UInt8.self, forKey: .averageHeartRate)
+        totalHeartRateSamples = try c.decode(Int.self, forKey: .totalHeartRateSamples)
+        sdnn = try c.decode(Double.self, forKey: .sdnn)
+        rmssd = try c.decode(Double.self, forKey: .rmssd)
+        hrvWindow = try c.decode(String.self, forKey: .hrvWindow)
+        hrvSampleCount = try c.decode(Int.self, forKey: .hrvSampleCount)
+        totalAccSamples = (try? c.decode(Int.self, forKey: .totalAccSamples)) ?? 0
     }
 }
 
@@ -103,6 +164,20 @@ extension SensorRecording {
         return csv
     }
 
+    /// Generate CSV string for accelerometer magnitude data (1-second averages)
+    func accelerometerCSV() -> String {
+        var csv = "Timestamp,Unix Time,Monotonic Time,Magnitude (mG)\n"
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        for point in accelerometerData {
+            let timestampStr = formatter.string(from: point.timestamp)
+            let unixTime = point.timestamp.timeIntervalSince1970
+            csv += "\(timestampStr),\(unixTime),\(point.monotonicTimestamp),\(String(format: "%.4f", point.magnitude))\n"
+        }
+        return csv
+    }
+
     /// Generate summary CSV
     func statisticsCSV() -> String {
         var csv = "Metric,Value\n"
@@ -111,6 +186,7 @@ extension SensorRecording {
         csv += "Duration (seconds),\(String(format: "%.1f", duration))\n"
         csv += "Heart Rate Samples,\(heartRateData.count)\n"
         csv += "RR Interval Samples,\(rrIntervalData.count)\n"
+        csv += "Accelerometer Samples (1s avg),\(statistics.totalAccSamples)\n"
         csv += "Min Heart Rate (BPM),\(statistics.minHeartRate)\n"
         csv += "Max Heart Rate (BPM),\(statistics.maxHeartRate)\n"
         csv += "Average Heart Rate (BPM),\(statistics.averageHeartRate)\n"

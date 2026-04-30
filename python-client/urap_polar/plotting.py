@@ -35,7 +35,8 @@ def plot_session(
     show: bool = True,
     save_path: Optional[str] = None,
 ) -> None:
-    """Plot heart rate and RR intervals for all sensors. One row per sensor, two columns (HR, RR)."""
+    """Plot HR, RR intervals, and accelerometer magnitude for all sensors.
+    Columns: HR, RR, ACC (ACC column only shown when any sensor has accelerometer data)."""
     import matplotlib.dates as mdates
     import matplotlib.pyplot as plt
 
@@ -47,17 +48,26 @@ def plot_session(
         print("No sensor data to plot.")
         return
 
-    fig, axes = plt.subplots(n_sensors, 2, figsize=(12, 4 * n_sensors), squeeze=False)
+    has_acc = any(not frames[s].get("accelerometer", pd.DataFrame()).empty for s in sensors)
+    n_cols = 3 if has_acc else 2
+    col_w = 5 if has_acc else 6
+
+    fig, axes = plt.subplots(n_sensors, n_cols, figsize=(col_w * n_cols, 4 * n_sensors), squeeze=False)
     fig.suptitle(f"Recording: {data.get('name', 'Unknown')}", fontsize=14)
 
     for i, sensor_id in enumerate(sensors):
         hr_df = frames[sensor_id]["heart_rate"].copy()
         rr_df = frames[sensor_id]["rr_intervals"].copy()
+        acc_df = frames[sensor_id].get("accelerometer", pd.DataFrame())
+        if not acc_df.empty:
+            acc_df = acc_df.copy()
 
         if not hr_df.empty:
             hr_df["timestamp"] = pd.to_datetime(hr_df["timestamp"])
         if not rr_df.empty:
             rr_df["timestamp"] = pd.to_datetime(rr_df["timestamp"])
+        if not acc_df.empty:
+            acc_df["timestamp"] = pd.to_datetime(acc_df["timestamp"])
 
         label = sensor_id
         for s in data.get("sensorRecordings", data.get("sensor_recordings", [])):
@@ -85,6 +95,24 @@ def plot_session(
         ax_rr.xaxis.set_major_locator(mdates.AutoDateLocator())
         ax_rr.grid(True, alpha=0.3)
         ax_rr.legend(loc="upper right", fontsize=8)
+
+        if has_acc:
+            ax_acc = axes[i, 2]
+            if not acc_df.empty:
+                ax_acc.fill_between(
+                    acc_df["timestamp"], acc_df["magnitude"],
+                    color="darkorange", alpha=0.4, linewidth=0,
+                )
+                ax_acc.plot(
+                    acc_df["timestamp"], acc_df["magnitude"],
+                    color="darkorange", linewidth=0.9, label=label,
+                )
+            ax_acc.set_ylabel("Magnitude (mG)")
+            ax_acc.set_title(f"Accelerometer — {label}")
+            ax_acc.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M:%S"))
+            ax_acc.xaxis.set_major_locator(mdates.AutoDateLocator())
+            ax_acc.grid(True, alpha=0.3)
+            ax_acc.legend(loc="upper right", fontsize=8)
 
     for ax in axes.flat:
         ax.tick_params(axis="x", rotation=15)
@@ -145,6 +173,81 @@ def plot_heart_rate(
         plt.savefig(save_path)
     if show:
         plt.show()
+
+
+def plot_accelerometer(
+    session: Union[Any, Dict[str, Any]],
+    sensor_id: Optional[str] = None,
+    show: bool = True,
+    save_path: Optional[str] = None,
+) -> None:
+    """Plot accelerometer magnitude (mG) for one sensor or all sensors (subplots).
+
+    Each subplot shows the 1-second averaged, HPF 0.25 Hz + LPF 5 Hz filtered vector
+    magnitude. A horizontal guide at 50 mG is drawn for light-activity reference.
+    """
+    import matplotlib.dates as mdates
+    import matplotlib.pyplot as plt
+
+    data = _session_dict(session)
+    frames = _session_to_frames(session)
+    if sensor_id:
+        sensors = [sensor_id] if sensor_id in frames else []
+    else:
+        sensors = list(frames.keys())
+    if not sensors:
+        print("No sensor data to plot.")
+        return
+
+    n = len(sensors)
+    fig, axes = plt.subplots(n, 1, figsize=(12, 4 * n), squeeze=(n == 1))
+    if n == 1:
+        axes = [axes]
+    fig.suptitle(f"Accelerometer magnitude — {data.get('name', 'Unknown')}", fontsize=14)
+
+    for i, sid in enumerate(sensors):
+        acc_df = frames[sid].get("accelerometer", pd.DataFrame())
+        if not acc_df.empty:
+            acc_df = acc_df.copy()
+            acc_df["timestamp"] = pd.to_datetime(acc_df["timestamp"])
+
+        label = sid
+        for s in data.get("sensorRecordings", data.get("sensor_recordings", [])):
+            if s.get("sensorId", s.get("sensor_id")) == sid:
+                label = s.get("sensorName", s.get("sensor_name", sid))
+                break
+
+        ax = axes[i]
+        if not acc_df.empty:
+            ax.fill_between(
+                acc_df["timestamp"], acc_df["magnitude"],
+                color="darkorange", alpha=0.35, linewidth=0,
+            )
+            ax.plot(
+                acc_df["timestamp"], acc_df["magnitude"],
+                color="darkorange", linewidth=1.0, label=label,
+            )
+            # Light-activity reference line
+            ax.axhline(50, color="gray", linewidth=0.8, linestyle="--", alpha=0.6, label="50 mG ref")
+        else:
+            ax.text(0.5, 0.5, "No accelerometer data", transform=ax.transAxes,
+                    ha="center", va="center", color="gray")
+
+        ax.set_ylabel("Magnitude (mG)")
+        ax.set_title(label)
+        ax.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M:%S"))
+        ax.xaxis.set_major_locator(mdates.AutoDateLocator())
+        ax.grid(True, alpha=0.3)
+        ax.legend(loc="upper right", fontsize=8)
+        ax.tick_params(axis="x", rotation=15)
+
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path)
+    if show:
+        plt.show()
+    else:
+        plt.close()
 
 
 def plot_rr_intervals(

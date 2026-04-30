@@ -12,6 +12,7 @@ warnings.filterwarnings("ignore", message=".*urllib3 v2 only supports OpenSSL.*"
 
 from .client import get_recording, list_recordings
 from .session import (
+    AccelerometerPoint,
     HeartRatePoint,
     RRIntervalPoint,
     RecordingSession,
@@ -19,7 +20,7 @@ from .session import (
     SensorData,
     to_dataframes,
 )
-from .plotting import plot_heart_rate, plot_rr_intervals, plot_session
+from .plotting import plot_accelerometer, plot_heart_rate, plot_rr_intervals, plot_session
 from .zip_loader import load_from_zip
 
 __all__ = [
@@ -30,9 +31,11 @@ __all__ = [
     "RecordingSession",
     "RecordingSummary",
     "SensorData",
+    "AccelerometerPoint",
     "HeartRatePoint",
     "RRIntervalPoint",
     "plot_session",
+    "plot_accelerometer",
     "plot_heart_rate",
     "plot_rr_intervals",
 ]

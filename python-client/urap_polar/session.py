@@ -44,6 +44,15 @@ class RRIntervalPoint:
     monotonic_timestamp: float = 0.0
 
 
+@dataclass(frozen=True)
+class AccelerometerPoint:
+    """Single accelerometer sample: timestamp, 1-second averaged filtered magnitude (mG)."""
+
+    timestamp: datetime
+    magnitude: float
+    monotonic_timestamp: float = 0.0
+
+
 def _point_from_hr(d: Dict[str, Any]) -> HeartRatePoint:
     ts = _parse_iso(d.get("timestamp")) or datetime.min
     return HeartRatePoint(
@@ -58,6 +67,15 @@ def _point_from_rr(d: Dict[str, Any]) -> RRIntervalPoint:
     return RRIntervalPoint(
         timestamp=ts,
         value=int(d.get("value", 0)),
+        monotonic_timestamp=float(d.get("monotonicTimestamp", 0)),
+    )
+
+
+def _point_from_acc(d: Dict[str, Any]) -> AccelerometerPoint:
+    ts = _parse_iso(d.get("timestamp")) or datetime.min
+    return AccelerometerPoint(
+        timestamp=ts,
+        magnitude=float(d.get("magnitude", 0)),
         monotonic_timestamp=float(d.get("monotonicTimestamp", 0)),
     )
 
@@ -100,12 +118,15 @@ class SensorData:
     _data: Dict[str, Any] = field(repr=False)
     _hr_points: List[HeartRatePoint] = field(default_factory=list, repr=False)
     _rr_points: List[RRIntervalPoint] = field(default_factory=list, repr=False)
+    _acc_points: List[AccelerometerPoint] = field(default_factory=list, repr=False)
 
     def __post_init__(self) -> None:
         for d in self._data.get("heartRateData", []):
             self._hr_points.append(_point_from_hr(d))
         for d in self._data.get("rrIntervalData", []):
             self._rr_points.append(_point_from_rr(d))
+        for d in self._data.get("accelerometerData", []):
+            self._acc_points.append(_point_from_acc(d))
 
     @property
     def sensor_id(self) -> str:
@@ -126,7 +147,23 @@ class SensorData:
 
     @property
     def data_point_count(self) -> int:
-        return len(self._hr_points) + len(self._rr_points)
+        return len(self._hr_points) + len(self._rr_points) + len(self._acc_points)
+
+    @property
+    def acc_sample_count(self) -> int:
+        return len(self._acc_points)
+
+    @property
+    def acc_avg(self) -> float:
+        if not self._acc_points:
+            return 0.0
+        return sum(p.magnitude for p in self._acc_points) / len(self._acc_points)
+
+    @property
+    def acc_max(self) -> float:
+        if not self._acc_points:
+            return 0.0
+        return max(p.magnitude for p in self._acc_points)
 
     # Statistics from API
     @property
@@ -185,6 +222,9 @@ class SensorData:
     def rr_points(self) -> List[RRIntervalPoint]:
         return list(self._rr_points)
 
+    def acc_points(self) -> List[AccelerometerPoint]:
+        return list(self._acc_points)
+
     def get_heart_rate_point(self, i: int) -> Optional[HeartRatePoint]:
         if 0 <= i < len(self._hr_points):
             return self._hr_points[i]
@@ -218,6 +258,19 @@ class SensorData:
                 "monotonicTimestamp": p.monotonic_timestamp,
             }
             for p in self._rr_points
+        ]
+        return pd.DataFrame(rows)
+
+    def acc_dataframe(self) -> Any:
+        if pd is None:
+            raise ImportError("pandas is required for acc_dataframe()")
+        rows = [
+            {
+                "timestamp": p.timestamp,
+                "magnitude": p.magnitude,
+                "monotonicTimestamp": p.monotonic_timestamp,
+            }
+            for p in self._acc_points
         ]
         return pd.DataFrame(rows)
 
@@ -307,6 +360,7 @@ class RecordingSession:
             out[s.sensor_id] = {
                 "heart_rate": s.heart_rate_dataframe(),
                 "rr_intervals": s.rr_dataframe(),
+                "accelerometer": s.acc_dataframe(),
             }
         return out
 
