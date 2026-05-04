@@ -29,6 +29,7 @@ actor SensorDataCollector {
     private var minHR: UInt8 = UInt8.max
     private var maxHR: UInt8 = 0
     private var accCount: Int = 0
+    private var firstAccSampleMonotonicTime: TimeInterval? = nil
 
     // HRV calculation buffer
     private let hrvWindow: TimeInterval = 300 // 5 minutes
@@ -89,12 +90,18 @@ actor SensorDataCollector {
     /// Each completed 1-second window (25 samples) appends one AccelerometerDataPoint.
     func addAccSamples(_ samples: [(x: Int32, y: Int32, z: Int32)]) {
         for sample in samples {
+            if firstAccSampleMonotonicTime == nil {
+                firstAccSampleMonotonicTime = timingSession.now()
+            }
             if let avg = accProcessor.processSample(x: sample.x, y: sample.y, z: sample.z) {
-                let now = timingSession.now()
-                let wallTime = timingSession.monotonicToDate(now)
+                // Deterministic timestamp: first-sample anchor + completed-window count × 1 second.
+                // The first 1-second average should land 1 second after the first raw sample,
+                // not at the first sample's timestamp.
+                let windowMonotonic = firstAccSampleMonotonicTime! + Double(accCount + 1) * 1.0
+                let wallTime = timingSession.monotonicToDate(windowMonotonic)
                 let point = AccelerometerDataPoint(
                     timestamp: wallTime,
-                    monotonicTimestamp: now,
+                    monotonicTimestamp: windowMonotonic,
                     magnitude: avg
                 )
                 accBuffer.append(point)
@@ -220,6 +227,7 @@ actor SensorDataCollector {
         maxHR = 0
         accCount = 0
         accProcessor.reset()
+        firstAccSampleMonotonicTime = nil
         timingSession = TimingSession(sessionId: sensorId)
     }
 }
