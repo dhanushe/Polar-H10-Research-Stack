@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Documentation | Polar H10 Research Stack</title>
+  <meta name="description" content="Full documentation for the Polar H10 Research Stack: iOS app setup, Python client API, REST endpoints, export formats, and HRV metrics."/>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230A84FF'/><polyline points='4,16 8,16 11,8 16,24 19,11 22,21 25,16 28,16' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/></svg>"/>
+  <style>
+    /* Docs-page only overrides */
+    .docs-hero {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 5rem 2rem 3rem;
+    }
+    .docs-hero-inner { max-width: 1240px; margin: 0 auto; padding: 0 0 0 calc(240px + 3.5rem); }
+    @media (max-width: 900px) { .docs-hero-inner { padding: 0; } }
+    .docs-hero h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: -0.04em; margin-bottom: 0.6rem; }
+    .docs-hero p { font-size: 1rem; color: var(--text-muted); }
+
+    /* Inline code */
+    .doc-section code { font-size: 0.82em; }
+  </style>
+</head>
+<body class="docs-page-body">
+
+<!-- ── Nav ── -->
+<nav id="nav" class="scrolled">
+  <a href="index.html" class="nav-brand">
+    <span class="nav-logo">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <polyline points="1,8 3,8 5,3 8,13 10,5 12,10 14,8 15,8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </span>
+    Polar H10 Research Stack
+  </a>
+  <div class="nav-links">
+    <a href="documentation.html" style="color:var(--accent)">Docs</a>
+    <a href="https://github.com/dhanushe/Polar-H10-Research-Stack" target="_blank" rel="noopener" class="nav-gh">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+      </svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<!-- Docs hero -->
+<div class="docs-hero">
+  <div class="docs-hero-inner">
+    <h1>Documentation</h1>
+    <p>iOS app setup, Python client API, REST endpoints, export formats, HRV metrics, and accelerometer DSP.</p>
+  </div>
+</div>
+
+<!-- ── Docs Layout ── -->
+<div class="docs-layout">
+
+  <!-- Sidebar -->
+  <aside class="docs-sidebar">
+    <div class="sidebar-group">
+      <div class="sidebar-group-title">iOS App</div>
+      <a href="#ios-requirements" class="sidebar-link">Requirements</a>
+      <a href="#ios-quickstart"   class="sidebar-link">Quick Start</a>
+      <a href="#recording-id"     class="sidebar-link">Recording IDs</a>
+      <a href="#ios-export"       class="sidebar-link">Export Options</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-title">Python Client</div>
+      <a href="#py-install"    class="sidebar-link">Installation</a>
+      <a href="#py-connect"    class="sidebar-link">Connecting</a>
+      <a href="#py-recordings" class="sidebar-link">Recordings</a>
+      <a href="#py-sensors"    class="sidebar-link">Sensor Data</a>
+      <a href="#py-dataframes" class="sidebar-link">DataFrames</a>
+      <a href="#py-plotting"   class="sidebar-link">Plotting</a>
+      <a href="#py-zip"        class="sidebar-link">Load from Zip</a>
+      <a href="#py-cli"        class="sidebar-link">CLI</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-title">REST API</div>
+      <a href="#api-overview" class="sidebar-link">Overview</a>
+      <a href="#api-list"     class="sidebar-link">List Recordings</a>
+      <a href="#api-get"      class="sidebar-link">Get Recording</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-title">Data Formats</div>
+      <a href="#csv-zip"     class="sidebar-link">CSV Zip Structure</a>
+      <a href="#csv-schemas" class="sidebar-link">CSV Schemas</a>
+      <a href="#json-format" class="sidebar-link">JSON Format</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-title">Reference</div>
+      <a href="#hrv-metrics" class="sidebar-link">HRV Metrics</a>
+      <a href="#acc-dsp"     class="sidebar-link">Accelerometer DSP</a>
+    </div>
+  </aside>
+
+  <!-- Content -->
+  <main class="docs-content">
+
+    <!-- ══ iOS App ══ -->
+    <div class="doc-section" id="ios-requirements">
+      <h2>iOS App</h2>
+      <h3>Requirements</h3>
+      <ul>
+        <li><strong>Device:</strong> iPhone or iPad running iOS 16+, or a Mac with Apple Silicon (macOS 13+)</li>
+        <li><strong>Hardware:</strong> Polar H10 chest strap with a charged battery</li>
+        <li><strong>Bluetooth:</strong> Device Bluetooth must be enabled; location permission required for BLE scanning</li>
+        <li><strong>Xcode:</strong> 15+ required to build from source (Swift 5.9+)</li>
+      </ul>
+    </div>
+
+    <div class="doc-section" id="ios-quickstart">
+      <h3>Quick Start</h3>
+      <ol>
+        <li>Build and run the <strong>URAP Polar H10 V1</strong> Xcode project on your device.</li>
+        <li>Open the <strong>Dashboard</strong> tab and tap <strong>+</strong> to scan for nearby Polar H10 sensors.</li>
+        <li>Tap a discovered sensor to connect. The sensor card appears with live HR and RR data.</li>
+        <li>Tap <strong>Start Recording</strong> and enter or auto-generate a 20-character session ID.</li>
+        <li>When finished, tap <strong>Stop</strong>. The session is saved and appears in the <strong>Recordings</strong> tab.</li>
+        <li>To use the Python API, find your <strong>Base URL</strong> under <strong>Settings → API for Python</strong>.</li>
+      </ol>
+    </div>
+
+    <div class="doc-section" id="recording-id">
+      <h3>Recording IDs</h3>
+      <p>Each session is identified by a <strong>20-character alphanumeric ID</strong> that you provide at the start of recording. IDs appear in exported filenames and are used to retrieve sessions via the Python API.</p>
+      <ul>
+        <li>Tap <strong>Auto-generate</strong> to have the app create a random ID.</li>
+        <li>Enter a custom ID (e.g. <code>SUBJECT01SESSION01AB</code>) to match your study protocol.</li>
+        <li>IDs must be exactly 20 characters; the app validates this before starting.</li>
+      </ul>
+    </div>
+
+    <div class="doc-section" id="ios-export">
+      <h3>Export Options</h3>
+      <p>Access export options from the <strong>Recordings</strong> tab → tap a session → <strong>Export</strong>.</p>
+      <ul>
+        <li><strong>CSV Zip</strong>: Structured zip archive with one CSV per data stream per sensor. Best for offline Python analysis. See <a href="#csv-zip">CSV Zip Structure</a>.</li>
+        <li><strong>JSON</strong>: Complete session as a single JSON file, using the same schema as the REST API response.</li>
+        <li><strong>Share Sheet</strong>: Shares the CSV zip via iOS share sheet (AirDrop, Files, Mail, etc.).</li>
+      </ul>
+      <div class="callout"><strong>Tip:</strong> The Python client's <code>load_from_zip()</code> method parses exported CSV zips offline with no app or network connection required.</div>
+    </div>
+
+    <!-- ══ Python Client ══ -->
+    <div class="doc-section" id="py-install">
+      <h2>Python Client</h2>
+      <h3>Installation</h3>
+<pre><code><span class="cm"># Install dependencies</span>
+pip install requests pandas matplotlib
+
+<span class="cm"># Or install the package from the repo root</span>
+pip install -e python-client/</code></pre>
+      <p>Python 3.9 or newer is required. The client lives in the <code>python-client/</code> directory of the repository.</p>
+    </div>
+
+    <div class="doc-section" id="py-connect">
+      <h3>Connecting to the App</h3>
+      <p>The app runs a local HTTP server on port <strong>8080</strong> while it's in the foreground. Your computer and iOS device must be on the <strong>same Wi-Fi network</strong>.</p>
+      <ol>
+        <li>Open the iOS app and keep it in the foreground.</li>
+        <li>Go to <strong>Settings → API for Python</strong>.</li>
+        <li>Copy the <strong>Base URL</strong> shown (e.g. <code>http://10.45.216.117:8080</code>).</li>
+      </ol>
+<pre><code><span class="k">import</span> urap_polar
+
+base_url = <span class="s">"http://10.45.216.117:8080"</span>  <span class="cm"># your device's URL from Settings</span></code></pre>
+      <div class="callout"><strong>Note:</strong> If the Base URL section in Settings is empty, ensure the app is in the foreground and the device is connected to Wi-Fi (not cellular).</div>
+    </div>
+
+    <div class="doc-section" id="py-recordings">
+      <h3>Working with Recordings</h3>
+<pre><code><span class="cm"># List all recordings on the device</span>
+recordings = urap_polar.<span class="f">list_recordings</span>(base_url=base_url)
+<span class="k">for</span> r <span class="k">in</span> recordings:
+    print(r.id, r.name, r.duration_seconds, r.sensor_count)
+
+<span class="cm"># Fetch a full session by ID</span>
+session = urap_polar.<span class="f">get_recording</span>(recordings[<span class="n">0</span>].id, base_url=base_url)</code></pre>
+
+      <h3>RecordingSummary properties</h3>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead><tr><th>Property</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>.id</td><td>str</td><td>20-character recording ID</td></tr>
+            <tr><td>.name</td><td>str</td><td>Human-readable session name</td></tr>
+            <tr><td>.start_date</td><td>datetime</td><td>Recording start time</td></tr>
+            <tr><td>.end_date</td><td>datetime</td><td>Recording end time</td></tr>
+            <tr><td>.duration_seconds</td><td>float</td><td>Total duration in seconds</td></tr>
+            <tr><td>.sensor_count</td><td>int</td><td>Number of sensors in session</td></tr>
+            <tr><td>.average_heart_rate</td><td>float | None</td><td>Mean HR across all sensors (BPM)</td></tr>
+            <tr><td>.average_sdnn</td><td>float | None</td><td>Mean SDNN across all sensors (ms)</td></tr>
+            <tr><td>.average_rmssd</td><td>float | None</td><td>Mean RMSSD across all sensors (ms)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>RecordingSession properties and methods</h3>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead><tr><th>Member</th><th>Returns</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>.id</td><td>str</td><td>20-character recording ID</td></tr>
+            <tr><td>.name</td><td>str</td><td>Session name</td></tr>
+            <tr><td>.duration_seconds</td><td>float</td><td>Total duration</td></tr>
+            <tr><td>.sensor_count</td><td>int</td><td>Number of sensors</td></tr>
+            <tr><td>.total_data_points</td><td>int</td><td>Sum of all HR + RR points</td></tr>
+            <tr><td>.average_heart_rate</td><td>float</td><td>Mean HR (BPM)</td></tr>
+            <tr><td>.average_sdnn</td><td>float</td><td>Mean SDNN (ms)</td></tr>
+            <tr><td>.average_rmssd</td><td>float</td><td>Mean RMSSD (ms)</td></tr>
+            <tr><td>.sensors()</td><td>list[SensorData]</td><td>All sensor recordings</td></tr>
+            <tr><td>.sensor(id)</td><td>SensorData | None</td><td>Single sensor by ID</td></tr>
+            <tr><td>.to_dataframes()</td><td>dict</td><td><code>{"sensor_id": {"heart_rate": df, "rr_intervals": df}}</code></td></tr>
+            <tr><td>.plot(show, save_path)</td><td>Figure</td><td>HR + RR figure, one row per sensor</td></tr>
+            <tr><td>.raw</td><td>dict</td><td>Raw JSON dict from API</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="doc-section" id="py-sensors">
+      <h3>Sensor Data</h3>
+<pre><code>sensor = session.<span class="f">sensors</span>()[<span class="n">0</span>]  <span class="cm"># or session.sensor(sensor_id)</span></code></pre>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead><tr><th>Member</th><th>Returns</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>.sensor_id</td><td>str</td><td>Bluetooth device identifier</td></tr>
+            <tr><td>.sensor_name</td><td>str</td><td>Display name (e.g. "Polar H10 A1B2C3")</td></tr>
+            <tr><td>.duration_seconds</td><td>float</td><td>Recording duration for this sensor</td></tr>
+            <tr><td>.data_point_count</td><td>int</td><td>Total HR + RR points</td></tr>
+            <tr><td>.heart_rate_min/max/avg</td><td>float</td><td>HR statistics (BPM)</td></tr>
+            <tr><td>.sdnn</td><td>float</td><td>SDNN HRV metric (ms)</td></tr>
+            <tr><td>.rmssd</td><td>float</td><td>RMSSD HRV metric (ms)</td></tr>
+            <tr><td>.hrv_window</td><td>int</td><td>Analysis window in minutes</td></tr>
+            <tr><td>.hrv_sample_count</td><td>int</td><td>RR intervals used for HRV</td></tr>
+            <tr><td>.rr_min/max/avg()</td><td>float</td><td>RR interval statistics (ms)</td></tr>
+            <tr><td>.heart_rate_points()</td><td>list</td><td>List of HeartRatePoint(timestamp, value, monotonic_timestamp)</td></tr>
+            <tr><td>.rr_points()</td><td>list</td><td>List of RRIntervalPoint(timestamp, value, monotonic_timestamp)</td></tr>
+            <tr><td>.heart_rate_dataframe()</td><td>DataFrame</td><td>HR as pandas DataFrame</td></tr>
+            <tr><td>.rr_dataframe()</td><td>DataFrame</td><td>RR intervals as pandas DataFrame</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="doc-section" id="py-dataframes">
+      <h3>DataFrames</h3>
+<pre><code><span class="cm"># All sensors at once</span>
+dfs = session.<span class="f">to_dataframes</span>()
+<span class="cm"># { sensor_id: { "heart_rate": df, "rr_intervals": df } }</span>
+
+<span class="cm"># Per-sensor</span>
+hr_df = sensor.<span class="f">heart_rate_dataframe</span>()
+rr_df = sensor.<span class="f">rr_dataframe</span>()
+
+<span class="cm"># Columns: timestamp, value, monotonic_timestamp</span>
+print(hr_df.head())</code></pre>
+      <p>All DataFrames have three columns: <code>timestamp</code> (ISO8601 string), <code>value</code> (BPM for HR, milliseconds for RR intervals), and <code>monotonic_timestamp</code> (seconds since device boot for precise inter-sample timing).</p>
+    </div>
+
+    <div class="doc-section" id="py-plotting">
+      <h3>Plotting</h3>
+<pre><code><span class="cm"># Full session: HR + RR, one row per sensor</span>
+session.<span class="f">plot</span>(show=<span class="k">True</span>, save_path=<span class="s">"recording.png"</span>)
+
+<span class="cm"># Module-level functions</span>
+urap_polar.<span class="f">plot_session</span>(session)
+urap_polar.<span class="f">plot_heart_rate</span>(session, sensor_id=<span class="k">None</span>)
+urap_polar.<span class="f">plot_rr_intervals</span>(session, sensor_id=<span class="k">None</span>)
+urap_polar.<span class="f">plot_accelerometer</span>(session)</code></pre>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead><tr><th>Function</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>session.plot(show, save_path)</td><td>One figure: HR + RR, one row per sensor</td></tr>
+            <tr><td>plot_session(session, ...)</td><td>Same as session.plot()</td></tr>
+            <tr><td>plot_heart_rate(session, sensor_id, ...)</td><td>HR only; omit sensor_id for all sensors</td></tr>
+            <tr><td>plot_rr_intervals(session, sensor_id, ...)</td><td>RR only; omit sensor_id for all sensors</td></tr>
+            <tr><td>plot_accelerometer(session)</td><td>Accelerometer magnitude per sensor</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="doc-section" id="py-zip">
+      <h3>Load from Exported Zip</h3>
+      <p>Analyze exported sessions locally without the app running:</p>
+<pre><code><span class="k">import</span> urap_polar
+
+session = urap_polar.<span class="f">load_from_zip</span>(<span class="s">"recording_abc123_csv.zip"</span>)
+
+<span class="cm"># Same interface as get_recording()</span>
+print(session.name, session.id, session.duration_seconds)
+<span class="k">for</span> s <span class="k">in</span> session.<span class="f">sensors</span>():
+    print(s.sensor_name, s.heart_rate_avg, s.sdnn, s.rmssd)
+
+session.<span class="f">plot</span>(save_path=<span class="s">"plot.png"</span>)</code></pre>
+      <h3>Batch scripts</h3>
+      <ul>
+        <li><code>process_zip_stats.py &lt;zip&gt; [--output report.csv]</code>: Prints session and per-sensor statistics, optionally saving to CSV.</li>
+        <li><code>zip_to_plot.py &lt;zip&gt; [--save plot.png]</code>: Loads a zip and generates the standard HR + RR figure.</li>
+        <li><code>verify_zip_parsing.py &lt;zip&gt;</code>: Validates zip structure and reports any issues.</li>
+      </ul>
+    </div>
+
+    <div class="doc-section" id="py-cli">
+      <h3>CLI</h3>
+      <p>Run from the <code>python-client/</code> directory. Requires the app to be open and on the same Wi-Fi.</p>
+<pre><code><span class="cm"># Fetch by recording ID and plot</span>
+python urap_polar.py RECORDING_ID &lt;BASE_URL&gt;
+
+<span class="cm"># Use the first available recording</span>
+python urap_polar.py &lt;BASE_URL&gt;</code></pre>
+    </div>
+
+    <!-- ══ REST API ══ -->
+    <div class="doc-section" id="api-overview">
+      <h2>REST API</h2>
+      <p>While the iOS app is open and in the foreground, a local HTTP server on <strong>port 8080</strong> serves all recordings on your Wi-Fi network. The base URL is shown in <strong>Settings → API for Python</strong>.</p>
+      <div class="callout"><strong>Availability:</strong> The server only runs while the app is in the foreground. Background or suspended state will cause connection refused errors.</div>
+    </div>
+
+    <div class="doc-section" id="api-list">
+      <h3>List Recordings</h3>
+<pre><code>GET &lt;base_url&gt;/recordings
+
+<span class="cm"># Example</span>
+curl http://10.45.216.117:8080/recordings</code></pre>
+      <p>Returns a JSON array of recording summary objects:</p>
+<pre><code>[
+  {
+    <span class="s">"id"</span>: <span class="s">"SUBJECT01SESSION01AB"</span>,
+    <span class="s">"name"</span>: <span class="s">"SUBJECT01SESSION01AB"</span>,
+    <span class="s">"startDate"</span>: <span class="s">"2026-05-01T10:00:00Z"</span>,
+    <span class="s">"endDate"</span>: <span class="s">"2026-05-01T10:30:00Z"</span>,
+    <span class="s">"durationSeconds"</span>: <span class="n">1800</span>,
+    <span class="s">"sensorCount"</span>: <span class="n">2</span>,
+    <span class="s">"averageHeartRate"</span>: <span class="n">72.4</span>,
+    <span class="s">"averageSDNN"</span>: <span class="n">48.2</span>,
+    <span class="s">"averageRMSSD"</span>: <span class="n">35.7</span>
+  }
+]</code></pre>
+    </div>
+
+    <div class="doc-section" id="api-get">
+      <h3>Get Recording</h3>
+<pre><code>GET &lt;base_url&gt;/recordings/&lt;recording_id&gt;
+
+<span class="cm"># Example</span>
+curl http://10.45.216.117:8080/recordings/SUBJECT01SESSION01AB</code></pre>
+      <p>Returns the full session JSON including per-sensor time series. The response schema mirrors the local JSON export; see <a href="#json-format">JSON Format</a>.</p>
+    </div>
+
+    <!-- ══ Data Formats ══ -->
+    <div class="doc-section" id="csv-zip">
+      <h2>Data Formats</h2>
+      <h3>CSV Zip Structure</h3>
+      <p>Exporting a session as <strong>CSV Zip</strong> produces a zip archive with one folder:</p>
+<pre><code>recording_&lt;id&gt;_csv/
+├── session_info.csv               <span class="cm"># session metadata + sensor summary table</span>
+├── sensor_1_&lt;sensorId&gt;_hr.csv
+├── sensor_1_&lt;sensorId&gt;_rr.csv
+├── sensor_1_&lt;sensorId&gt;_acc.csv
+├── sensor_1_&lt;sensorId&gt;_statistics.csv
+├── sensor_2_&lt;sensorId&gt;_hr.csv
+└── ...</code></pre>
+      <p>Sensors are numbered from 1. Files are always present even if that sensor recorded no data of that type (they will be header-only).</p>
+    </div>
+
+    <div class="doc-section" id="csv-schemas">
+      <h3>CSV Schemas</h3>
+
+      <h3>Heart Rate (<code>_hr.csv</code>)</h3>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>timestamp</td><td>string</td><td>ISO8601 wall-clock time</td></tr>
+            <tr><td>value</td><td>float</td><td>Heart rate in BPM</td></tr>
+            <tr><td>monotonic_timestamp</td><td>float</td><td>Seconds since device boot (precise timing)</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>RR Intervals (<code>_rr.csv</code>)</h3>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>timestamp</td><td>string</td><td>ISO8601 wall-clock time</td></tr>
+            <tr><td>value</td><td>float</td><td>RR interval in milliseconds</td></tr>
+            <tr><td>monotonic_timestamp</td><td>float</td><td>Seconds since device boot</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Accelerometer (<code>_acc.csv</code>)</h3>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead><tr><th>Column</th><th>Type</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>timestamp</td><td>string</td><td>ISO8601 wall-clock time (1-second windows)</td></tr>
+            <tr><td>magnitude</td><td>float</td><td>Filtered vector magnitude in milli-g</td></tr>
+            <tr><td>monotonic_timestamp</td><td>float</td><td>Seconds since device boot</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Statistics (<code>_statistics.csv</code>)</h3>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead><tr><th>Column</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>sensor_id</td><td>Bluetooth device identifier</td></tr>
+            <tr><td>sensor_name</td><td>Display name</td></tr>
+            <tr><td>heart_rate_min/max/avg</td><td>HR statistics (BPM)</td></tr>
+            <tr><td>sdnn</td><td>SDNN (ms)</td></tr>
+            <tr><td>rmssd</td><td>RMSSD (ms)</td></tr>
+            <tr><td>hrv_window_minutes</td><td>Analysis window used</td></tr>
+            <tr><td>hrv_sample_count</td><td>Number of RR intervals used</td></tr>
+            <tr><td>duration_seconds</td><td>Sensor recording duration</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="doc-section" id="json-format">
+      <h3>JSON Format</h3>
+      <p>The JSON export and REST API response share the same schema:</p>
+<pre><code>{
+  <span class="s">"id"</span>: <span class="s">"SUBJECT01SESSION01AB"</span>,
+  <span class="s">"name"</span>: <span class="s">"SUBJECT01SESSION01AB"</span>,
+  <span class="s">"startDate"</span>: <span class="s">"2026-05-01T10:00:00.000Z"</span>,
+  <span class="s">"endDate"</span>: <span class="s">"2026-05-01T10:30:00.000Z"</span>,
+  <span class="s">"sensors"</span>: [
+    {
+      <span class="s">"sensorId"</span>: <span class="s">"A0:B1:C2:D3:E4:F5"</span>,
+      <span class="s">"sensorName"</span>: <span class="s">"Polar H10 A1B2C3"</span>,
+      <span class="s">"heartRateData"</span>: [
+        { <span class="s">"timestamp"</span>: <span class="s">"..."</span>, <span class="s">"value"</span>: <span class="n">72</span>, <span class="s">"monotonicTimestamp"</span>: <span class="n">12345.6</span> }
+      ],
+      <span class="s">"rrIntervalData"</span>: [...],
+      <span class="s">"accelerometerData"</span>: [...],
+      <span class="s">"statistics"</span>: {
+        <span class="s">"heartRateMin"</span>: <span class="n">58</span>, <span class="s">"heartRateMax"</span>: <span class="n">95</span>, <span class="s">"heartRateAvg"</span>: <span class="n">72.4</span>,
+        <span class="s">"sdnn"</span>: <span class="n">48.2</span>, <span class="s">"rmssd"</span>: <span class="n">35.7</span>, <span class="s">"hrvWindow"</span>: <span class="n">5</span>, <span class="s">"hrvSampleCount"</span>: <span class="n">240</span>
+      }
+    }
+  ]
+}</code></pre>
+    </div>
+
+    <!-- ══ Reference ══ -->
+    <div class="doc-section" id="hrv-metrics">
+      <h2>HRV Metrics</h2>
+
+      <h3>SDNN</h3>
+      <p><strong>Standard Deviation of Normal-to-Normal intervals.</strong> Reflects overall heart rate variability, influenced by both sympathetic and parasympathetic nervous system activity. Higher SDNN generally indicates greater autonomic flexibility.</p>
+      <p>Formula: <code>SDNN = √( (1/N) × Σ(RRᵢ − RR̄)² )</code></p>
+
+      <h3>RMSSD</h3>
+      <p><strong>Root Mean Square of Successive Differences.</strong> Captures beat-to-beat variability and primarily reflects parasympathetic (vagal) nervous system activity. Commonly used in stress and recovery research.</p>
+      <p>Formula: <code>RMSSD = √( (1/(N-1)) × Σ(RRᵢ₊₁ − RRᵢ)² )</code></p>
+
+      <h3>Analysis Windows</h3>
+      <p>Both SDNN and RMSSD are calculated over a configurable trailing window. Set via <strong>Settings → HRV Window</strong> in the app:</p>
+      <div class="api-table-wrap">
+        <table class="api-table">
+          <thead><tr><th>Window</th><th>Use case</th></tr></thead>
+          <tbody>
+            <tr><td>1 minute</td><td>Short-task studies, rapid state changes</td></tr>
+            <tr><td>2 minutes</td><td>General monitoring</td></tr>
+            <tr><td>5 minutes</td><td>Standard clinical HRV window (recommended)</td></tr>
+            <tr><td>10 minutes</td><td>Resting baseline, longer protocol segments</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="doc-section" id="acc-dsp">
+      <h3>Accelerometer DSP Pipeline</h3>
+      <p>Raw 3-axis data from the Polar H10 is processed on-device before storage:</p>
+      <ol>
+        <li><strong>Sampling:</strong> 25 Hz raw samples from the H10 (X, Y, Z axes in milli-g).</li>
+        <li><strong>High-pass filter (per axis):</strong> Biquad IIR at 0.25 Hz removes the static gravity component, leaving only dynamic movement.</li>
+        <li><strong>Low-pass filter (per axis):</strong> Biquad IIR at 5 Hz removes high-frequency sensor noise.</li>
+        <li><strong>Vector magnitude:</strong> <code>|a| = √(x² + y² + z²)</code> computed for each sample.</li>
+        <li><strong>1-second averaging:</strong> 25 samples are averaged into a single magnitude value per second.</li>
+      </ol>
+      <p>The output is compatible with <strong>ENMO</strong> (Euclidean Norm Minus One) and <strong>HPFVM</strong> (High-Pass Filtered Vector Magnitude) activity count metrics used in occupant behavior and built environment research.</p>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── Footer ── -->
+<footer>
+  <p>
+    <a href="index.html">Polar H10 Research Stack</a> ·
+    <a href="documentation.html">Docs</a> ·
+    <a href="https://github.com/dhanushe/Polar-H10-Research-Stack" target="_blank" rel="noopener">GitHub</a>
+    &nbsp;·&nbsp; MIT License &nbsp;·&nbsp; UC Berkeley Center for the Built Environment
+  </p>
+</footer>
+
+<script>
+  // Active sidebar link on scroll
+  const sections = document.querySelectorAll('.doc-section[id]');
+  const links = document.querySelectorAll('.sidebar-link');
+
+  function syncSidebar() {
+    let current = '';
+    sections.forEach(s => { if (window.scrollY >= s.offsetTop - 110) current = s.id; });
+    links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + current));
+  }
+  window.addEventListener('scroll', syncSidebar, { passive: true });
+  syncSidebar();
+</script>
+
+</body>
+</html>
