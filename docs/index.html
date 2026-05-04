@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Polar H10 Research Stack | UC Berkeley CBE</title>
+  <meta name="description" content="Research-grade heart rate and HRV recording with the Polar H10 chest strap. iOS app + Python API for physiological analysis."/>
+  <link rel="stylesheet" href="style.css"/>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%230A84FF'/><polyline points='4,16 8,16 11,8 16,24 19,11 22,21 25,16 28,16' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'/></svg>"/>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav id="nav">
+  <a href="index.html" class="nav-brand">
+    <span class="nav-logo">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <polyline points="1,8 3,8 5,3 8,13 10,5 12,10 14,8 15,8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </span>
+    Polar H10 Research Stack
+  </a>
+  <div class="nav-links">
+    <a href="documentation.html">Docs</a>
+    <a href="https://github.com/dhanushe/Polar-H10-Research-Stack" target="_blank" rel="noopener" class="nav-gh">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+      </svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<!-- ══════════════ HERO ══════════════ -->
+<section class="hero">
+
+  <!-- Aurora background -->
+  <div class="aurora">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+  <div class="hero-grid"></div>
+
+  <!-- Main content -->
+  <div class="hero-content">
+    <div class="hero-pill">
+      <span class="pulse-dot"></span>
+      UC Berkeley · Center for the Built Environment · URAP
+    </div>
+    <h1>
+      Research-Grade<br>
+      <span class="grad-text">Heart Rate</span><br>
+      Recording &amp; Analysis
+    </h1>
+    <p class="hero-sub">
+      iOS app + Python pipeline for ECG-derived HR, RR intervals,
+      and accelerometer data from the Polar H10 chest strap, built for physiological research.
+    </p>
+    <div class="hero-actions">
+      <a href="documentation.html" class="btn btn-glow">
+        Get Started
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7h12M8 3l5 4-5 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+      <a href="https://github.com/dhanushe/Polar-H10-Research-Stack" target="_blank" rel="noopener" class="btn btn-outline">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        View Source
+      </a>
+    </div>
+    <div class="tech-badges">
+      <span class="tech-badge">Swift 5.9+</span>
+      <span class="tech-badge">Python 3.9+</span>
+      <span class="tech-badge">iOS 16+ · iPadOS · macOS</span>
+      <span class="tech-badge">MIT License</span>
+    </div>
+  </div>
+
+  <!-- Live ECG strip at the bottom -->
+  <div class="hero-ecg">
+    <div class="ecg-meta">
+      <span class="ecg-live">
+        <span class="pulse-dot"></span>
+        ECG · LIVE
+      </span>
+      <span class="ecg-bpm">72 BPM · 48ms RMSSD</span>
+    </div>
+    <div class="ecg-wrap">
+      <svg viewBox="0 0 800 60" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        <defs>
+          <filter id="ecg-glow" x="-10%" width="120%" y="-60%" height="220%">
+            <feGaussianBlur stdDeviation="2.5" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <g filter="url(#ecg-glow)">
+          <!-- 8 cycles of PQRST waveform, each 200 SVG units, baseline y=40, height=60 -->
+          <path d="M0,40 H40 C43,33 47,29 50,33 C53,37 56,40 72,40 L75,46 L79,8 L83,54 L87,40 H104 C109,32 117,28 122,30 C127,33 132,40 160,40
+          H200 H240 C243,33 247,29 250,33 C253,37 256,40 272,40 L275,46 L279,8 L283,54 L287,40 H304 C309,32 317,28 322,30 C327,33 332,40 360,40
+          H400 H440 C443,33 447,29 450,33 C453,37 456,40 472,40 L475,46 L479,8 L483,54 L487,40 H504 C509,32 517,28 522,30 C527,33 532,40 560,40
+          H600 H640 C643,33 647,29 650,33 C653,37 656,40 672,40 L675,46 L679,8 L683,54 L687,40 H704 C709,32 717,28 722,30 C727,33 732,40 760,40
+          H800 H840 C843,33 847,29 850,33 C853,37 856,40 872,40 L875,46 L879,8 L883,54 L887,40 H904 C909,32 917,28 922,30 C927,33 932,40 960,40
+          H1000 H1040 C1043,33 1047,29 1050,33 C1053,37 1056,40 1072,40 L1075,46 L1079,8 L1083,54 L1087,40 H1104 C1109,32 1117,28 1122,30 C1127,33 1132,40 1160,40
+          H1200 H1240 C1243,33 1247,29 1250,33 C1253,37 1256,40 1272,40 L1275,46 L1279,8 L1283,54 L1287,40 H1304 C1309,32 1317,28 1322,30 C1327,33 1332,40 1360,40
+          H1400 H1440 C1443,33 1447,29 1450,33 C1453,37 1456,40 1472,40 L1475,46 L1479,8 L1483,54 L1487,40 H1504 C1509,32 1517,28 1522,30 C1527,33 1532,40 1560,40 H1600"
+            fill="none" stroke="#0A84FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <animateTransform attributeName="transform" type="translate" from="0 0" to="-200 0" dur="2.8s" repeatCount="indefinite"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ STATS STRIP ══════════════ -->
+<div class="stats-strip">
+  <div class="stats-grid">
+    <div class="stat-item reveal">
+      <div class="stat-number">25<span class="stat-unit">Hz</span></div>
+      <div class="stat-label">Accelerometer Rate</div>
+    </div>
+    <div class="stat-item reveal reveal-d1">
+      <div class="stat-number">2</div>
+      <div class="stat-label">HRV Metrics (SDNN · RMSSD)</div>
+    </div>
+    <div class="stat-item reveal reveal-d2">
+      <div class="stat-number">∞</div>
+      <div class="stat-label">Concurrent Sensors</div>
+    </div>
+    <div class="stat-item reveal reveal-d3">
+      <div class="stat-number">0</div>
+      <div class="stat-label">Proprietary Software Required</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ FEATURES BENTO ══════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="reveal"><span class="eyebrow">Capabilities</span></div>
+    <h2 class="section-title reveal reveal-d1">Everything you need<br>for HR research</h2>
+    <p class="section-sub reveal reveal-d2">From Bluetooth capture to pandas DataFrames. No proprietary software, no cables, no lock-in.</p>
+
+    <div class="bento">
+      <!-- Wide card: Multi-Sensor -->
+      <div class="bento-card bento-wide reveal">
+        <div class="bento-icon">📡</div>
+        <h3>Multi-Sensor Recording</h3>
+        <p>Connect multiple Polar H10 sensors simultaneously over Bluetooth LE and capture all of them in a single timestamped session. Each sensor gets its own HR, RR, and accelerometer stream.</p>
+        <div class="sensor-viz">
+          <div class="sensor-dot-vi"></div>
+          <div class="sensor-dot-vi"></div>
+          <div class="sensor-dot-vi"></div>
+        </div>
+      </div>
+
+      <!-- HRV card -->
+      <div class="bento-card reveal reveal-d1">
+        <div class="bento-icon">💓</div>
+        <h3>HRV Analysis</h3>
+        <p>On-device SDNN and RMSSD calculations with configurable 1, 2, 5, or 10-minute windows. Updates continuously in real time.</p>
+      </div>
+
+      <!-- Export card -->
+      <div class="bento-card reveal reveal-d2">
+        <div class="bento-icon">🗂️</div>
+        <h3>Flexible Export</h3>
+        <p>Structured CSV zips with per-sensor files for HR, RR, and accelerometer data, plus full JSON. Share via AirDrop, Files, or email.</p>
+      </div>
+
+      <!-- Wide card: Python API with mini code -->
+      <div class="bento-card bento-wide bento-alt reveal reveal-d3">
+        <div class="bento-icon">🐍</div>
+        <h3>Python HTTP API</h3>
+        <p>While the app is open, a local server on port 8080 exposes all recordings over your Wi-Fi. Fetch sessions as pandas DataFrames in three lines.</p>
+        <div class="mini-code"><span class="k">import</span> urap_polar
+session = urap_polar.<span class="f">get_recording</span>(id, base_url=url)
+session.<span class="f">plot</span>()  <span class="cm"># HR + RR for all sensors</span></div>
+      </div>
+
+      <!-- Live Charts -->
+      <div class="bento-card reveal reveal-d4">
+        <div class="bento-icon">📊</div>
+        <h3>Live Charts</h3>
+        <p>Interactive time-range charts (2 min to 1 hour), live HRV readouts, and a real-time 3D accelerometer visualizer.</p>
+      </div>
+
+      <!-- Accelerometer DSP -->
+      <div class="bento-card reveal reveal-d5">
+        <div class="bento-icon">⚡</div>
+        <h3>Accelerometer DSP</h3>
+        <p>On-device IIR filter pipeline with a 0.25 Hz high-pass and 5 Hz low-pass stage, outputting 1-second activity magnitudes compatible with ENMO/HPFVM metrics.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ HOW IT WORKS ══════════════ -->
+<section class="section section-alt">
+  <div class="container">
+    <div class="reveal"><span class="eyebrow">Workflow</span></div>
+    <h2 class="section-title reveal reveal-d1">Three steps from<br>chest strap to DataFrame</h2>
+    <p class="section-sub reveal reveal-d2" style="margin-bottom:3rem">The full pipeline from Bluetooth capture to publication-ready figures.</p>
+    <div class="workflow-grid">
+      <div class="workflow-card reveal">
+        <div class="step-num">1</div>
+        <h3>Connect &amp; Record</h3>
+        <p>Open the Dashboard, pair your Polar H10 over Bluetooth, enter a 20-character session ID, and tap Record. Live HR and RR data stream immediately to the screen.</p>
+      </div>
+      <div class="workflow-card reveal reveal-d1">
+        <div class="step-num">2</div>
+        <h3>Export or Stream</h3>
+        <p>Stop the recording and export as a CSV zip for offline analysis, or keep the app open to stream sessions live to Python over your local Wi-Fi network using the built-in HTTP API.</p>
+      </div>
+      <div class="workflow-card reveal reveal-d2">
+        <div class="step-num">3</div>
+        <h3>Analyze in Python</h3>
+        <p>Use the included <code>urap_polar</code> client to fetch sessions, build pandas DataFrames, compute HRV, and generate publication-ready matplotlib figures. All in a few lines of code.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ CODE ══════════════ -->
+<section class="section">
+  <div class="container">
+    <div class="reveal"><span class="eyebrow">Quick Start</span></div>
+    <h2 class="section-title reveal reveal-d1">From install to first plot</h2>
+    <p class="section-sub reveal reveal-d2">The Python client connects to the app over Wi-Fi. No cables or pairing needed.</p>
+
+    <div class="code-demo reveal reveal-d2">
+      <div class="code-header">
+        <div class="traffic-lights">
+          <div class="tl tl-r"></div>
+          <div class="tl tl-y"></div>
+          <div class="tl tl-g"></div>
+        </div>
+        <span class="code-filename">urap_polar · Python Client</span>
+      </div>
+      <div class="code-tabs-row">
+        <div class="code-tab-btn active" onclick="switchTab('install',this)">Install</div>
+        <div class="code-tab-btn" onclick="switchTab('fetch',this)">Fetch &amp; Plot</div>
+        <div class="code-tab-btn" onclick="switchTab('zip',this)">Load from Zip</div>
+        <div class="code-tab-btn" onclick="switchTab('df',this)">DataFrames</div>
+      </div>
+      <div id="pane-install" class="code-pane active">
+        <pre><span class="cm"># In the python-client directory</span>
+pip install requests pandas matplotlib
+
+<span class="cm"># Or install as an editable package</span>
+pip install -e python-client/</pre>
+      </div>
+      <div id="pane-fetch" class="code-pane">
+        <pre><span class="k">import</span> urap_polar
+
+<span class="cm"># Base URL from: iOS app → Settings → API for Python</span>
+base_url = <span class="s">"http://10.45.216.117:8080"</span>
+
+<span class="cm"># List all sessions on device</span>
+recordings = urap_polar.<span class="f">list_recordings</span>(base_url=base_url)
+<span class="k">for</span> r <span class="k">in</span> recordings:
+    print(r.id, r.name, r.duration_seconds)
+
+<span class="cm"># Fetch a full session and plot HR + RR for all sensors</span>
+session = urap_polar.<span class="f">get_recording</span>(recordings[<span class="n">0</span>].id, base_url=base_url)
+session.<span class="f">plot</span>(save_path=<span class="s">"recording.png"</span>)</pre>
+      </div>
+      <div id="pane-zip" class="code-pane">
+        <pre><span class="k">import</span> urap_polar
+
+<span class="cm"># Load an exported CSV zip without the app or network</span>
+session = urap_polar.<span class="f">load_from_zip</span>(<span class="s">"recording_abc123_csv.zip"</span>)
+
+print(session.name, session.id, session.duration_seconds)
+<span class="k">for</span> s <span class="k">in</span> session.<span class="f">sensors</span>():
+    print(s.sensor_name, s.heart_rate_avg, s.sdnn, s.rmssd)
+
+session.<span class="f">plot</span>(save_path=<span class="s">"output.png"</span>)</pre>
+      </div>
+      <div id="pane-df" class="code-pane">
+        <pre><span class="cm"># Export all sensor data to pandas DataFrames</span>
+dfs = session.<span class="f">to_dataframes</span>()
+<span class="cm"># → { sensor_id: { "heart_rate": df, "rr_intervals": df, "accelerometer": df } }</span>
+
+sensor = session.<span class="f">sensors</span>()[<span class="n">0</span>]
+hr_df  = sensor.<span class="f">heart_rate_dataframe</span>()   <span class="cm"># columns: timestamp, value, monotonicTimestamp</span>
+rr_df  = sensor.<span class="f">rr_dataframe</span>()
+
+<span class="cm"># HRV stats (per-sensor)</span>
+print(sensor.sdnn, sensor.rmssd, sensor.hrv_window)</pre>
+      </div>
+    </div>
+
+    <p style="margin-top:1.25rem; font-size:0.85rem; color:var(--text-muted);">
+      Full API reference, CLI usage, and plotting options in the <a href="documentation.html">documentation →</a>
+    </p>
+  </div>
+</section>
+
+<!-- ══════════════ ABOUT ══════════════ -->
+<section class="section section-alt">
+  <div class="container">
+    <div class="reveal"><span class="eyebrow">About</span></div>
+    <h2 class="section-title reveal reveal-d1">Built for rigorous<br>physiological research</h2>
+    <div class="about-layout" style="margin-top:2.5rem">
+      <div class="about-text reveal reveal-d2">
+        <p>
+          This project is part of an Undergraduate Research Apprenticeship Program (URAP) at the
+          <strong>Center for the Built Environment, UC Berkeley</strong>,
+          investigating how indoor environmental conditions affect occupant physiology.
+        </p>
+        <p>
+          The Polar H10 chest strap provides clinical-grade ECG-derived HR and RR intervals.
+          This stack captures that signal, adds accelerometer context for activity estimation,
+          and delivers it to Python with the same interface whether you're streaming live or
+          analyzing an exported zip offline.
+        </p>
+        <p>
+          The dual architecture (Swift app for capture, Python client for analysis) means
+          researchers can focus on their study design, not data plumbing.
+        </p>
+        <a href="https://github.com/dhanushe/Polar-H10-Research-Stack" target="_blank" rel="noopener"
+           class="btn btn-outline" style="display:inline-flex; margin-top:0.5rem;">
+          View source on GitHub →
+        </a>
+      </div>
+      <div class="reveal reveal-d3">
+        <div class="team-card">
+          <div class="team-label">Research Team</div>
+          <div class="person">
+            <div class="avatar avatar-a">DE</div>
+            <div>
+              <div class="person-name">Dhanush Eashwar</div>
+              <div class="person-role">URAP Researcher · UC Berkeley</div>
+            </div>
+          </div>
+          <div class="person">
+            <div class="avatar avatar-b">CH</div>
+            <div>
+              <div class="person-name">Charlie Huizenga</div>
+              <div class="person-role">Mentor · Center for the Built Environment</div>
+            </div>
+          </div>
+          <div class="institution-row">
+            <div class="inst-label">Institution</div>
+            <div class="inst-name">Center for the Built Environment<br>University of California, Berkeley</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ FOOTER ══════════════ -->
+<footer>
+  <p>
+    <a href="index.html">Polar H10 Research Stack</a> ·
+    <a href="documentation.html">Documentation</a> ·
+    <a href="https://github.com/dhanushe/Polar-H10-Research-Stack" target="_blank" rel="noopener">GitHub</a>
+    &nbsp;·&nbsp; MIT License &nbsp;·&nbsp; UC Berkeley Center for the Built Environment
+  </p>
+</footer>
+
+<!-- ══════════════ SCRIPTS ══════════════ -->
+<script>
+  // Sticky nav
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('scrolled', window.scrollY > 20);
+  }, { passive: true });
+
+  // Scroll reveal
+  const ro = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); ro.unobserve(e.target); }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach(el => ro.observe(el));
+
+  // Code tab switcher
+  function switchTab(id, btn) {
+    document.querySelectorAll('.code-pane').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.code-tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('pane-' + id).classList.add('active');
+    btn.classList.add('active');
+  }
+
+  // Bento card mouse tracking (spotlight effect via CSS variable)
+  document.querySelectorAll('.bento-card').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      card.style.setProperty('--mouse-x', ((e.clientX - r.left) / r.width * 100) + '%');
+      card.style.setProperty('--mouse-y', ((e.clientY - r.top)  / r.height * 100) + '%');
+    });
+  });
+</script>
+
+</body>
+</html>
