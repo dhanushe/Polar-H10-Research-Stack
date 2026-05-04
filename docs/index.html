@@ -280,10 +280,10 @@ session.<span class="f">plot</span>(save_path=<span class="s">"output.png"</span
       <div id="pane-df" class="code-pane">
         <pre><span class="cm"># Export all sensor data to pandas DataFrames</span>
 dfs = session.<span class="f">to_dataframes</span>()
-<span class="cm"># → { sensor_id: { "heart_rate": df, "rr_intervals": df } }</span>
+<span class="cm"># → { sensor_id: { "heart_rate": df, "rr_intervals": df, "accelerometer": df } }</span>
 
 sensor = session.<span class="f">sensors</span>()[<span class="n">0</span>]
-hr_df  = sensor.<span class="f">heart_rate_dataframe</span>()   <span class="cm"># columns: timestamp, value, monotonic_timestamp</span>
+hr_df  = sensor.<span class="f">heart_rate_dataframe</span>()   <span class="cm"># columns: timestamp, value, monotonicTimestamp</span>
 rr_df  = sensor.<span class="f">rr_dataframe</span>()
 
 <span class="cm"># HRV stats (per-sensor)</span>
