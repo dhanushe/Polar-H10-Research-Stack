@@ -83,6 +83,14 @@ struct DashboardView: View {
                     showRecordingError = true
                 }
             }
+            .onReceive(recordingCoordinator.$error.compactMap { $0 }) { _ in
+                showRecordingError = true
+            }
+            .alert("Recording Error", isPresented: $showRecordingError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(recordingCoordinator.error?.localizedDescription ?? "Unknown recording error")
+            }
             .overlay(alignment: .bottom) {
                 VStack(spacing: AppTheme.spacing.sm) {
                     if showRecordingSavedAlert {

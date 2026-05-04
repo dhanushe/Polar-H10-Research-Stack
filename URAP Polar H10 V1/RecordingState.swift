@@ -101,6 +101,7 @@ enum RecordingError: Error, LocalizedError {
     case invalidStateTransition(from: String, to: String)
     case saveFailed(Error)
     case storageFull
+    case sessionInterrupted
 
     var errorDescription: String? {
         switch self {
@@ -114,6 +115,8 @@ enum RecordingError: Error, LocalizedError {
             return "Failed to save recording: \(error.localizedDescription)"
         case .storageFull:
             return "Device storage is full"
+        case .sessionInterrupted:
+            return "A recording session was interrupted while the app was in the background. The session data could not be recovered."
         }
     }
 }

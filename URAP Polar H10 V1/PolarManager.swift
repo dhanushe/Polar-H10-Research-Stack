@@ -336,6 +336,8 @@ class PolarManager: NSObject, ObservableObject {
         if !isBluetoothOn {
             errorMessage = "Bluetooth is turned off"
         }
+
+        loadPersistedDevices()
     }
 
     // MARK: - Device Search
@@ -389,6 +391,7 @@ class PolarManager: NSObject, ObservableObject {
 
         devicesToMaintain.insert(device.deviceId)
         reconnectionAttempts[device.deviceId] = 0
+        savePersistedDevices()
 
         do {
             try api.connectToDevice(device.deviceId)
@@ -396,6 +399,7 @@ class PolarManager: NSObject, ObservableObject {
             errorMessage = "Connection failed: \(error.localizedDescription)"
             sensors.removeValue(forKey: device.deviceId)
             devicesToMaintain.remove(device.deviceId)
+            savePersistedDevices()
             updateConnectedSensorsList()
         }
     }
@@ -408,6 +412,7 @@ class PolarManager: NSObject, ObservableObject {
         }
 
         devicesToMaintain.remove(deviceId)
+        savePersistedDevices()
         reconnectionAttempts.removeValue(forKey: deviceId)
 
         sensor.hrDisposable?.dispose()
@@ -436,7 +441,9 @@ class PolarManager: NSObject, ObservableObject {
 
     /// Start recording on all connected sensors
     func startRecording(recordingId: String) {
-        let sensorList = sensors.values.map { (id: $0.id, name: $0.deviceName) }
+        let sensorList = sensors.values
+            .filter { $0.connectionState == .connected }
+            .map { (id: $0.id, name: $0.deviceName) }
         Task { @MainActor in
             recordingCoordinator.startRecording(sensors: sensorList, recordingId: recordingId)
         }
@@ -468,6 +475,30 @@ class PolarManager: NSObject, ObservableObject {
         Task { @MainActor in
             recordingCoordinator.cancelRecording()
         }
+    }
+
+    // MARK: - Device Persistence
+
+    private func savePersistedDevices() {
+        let deviceList: [[String: String]] = devicesToMaintain.compactMap { deviceId in
+            guard let name = sensors[deviceId]?.deviceName else { return nil }
+            return ["id": deviceId, "name": name]
+        }
+        UserDefaults.standard.set(deviceList, forKey: "maintainedDevices")
+    }
+
+    private func loadPersistedDevices() {
+        let saved = UserDefaults.standard.array(forKey: "maintainedDevices") as? [[String: String]] ?? []
+        for entry in saved {
+            guard let id = entry["id"], let name = entry["name"] else { continue }
+            guard sensors[id] == nil else { continue }
+            let sensor = ConnectedSensor(deviceId: id, deviceName: name)
+            sensor.connectionState = .disconnected
+            sensors[id] = sensor
+            devicesToMaintain.insert(id)
+            reconnectionAttempts[id] = 0
+        }
+        reconnectLostDevices()
     }
 
     // MARK: - Background Lifecycle
@@ -761,9 +792,12 @@ extension PolarManager: PolarBleApiObserver {
                 self.attemptReconnection(deviceId: polarDeviceInfo.deviceId)
             }
 
-            // Remove sensor from recording
+            // Only remove from recording if not actively recording — preserves
+            // accumulated data so a brief disconnect doesn't destroy the session
             Task { @MainActor in
-                self.recordingCoordinator.removeSensor(id: polarDeviceInfo.deviceId)
+                if !self.recordingCoordinator.state.isActive {
+                    self.recordingCoordinator.removeSensor(id: polarDeviceInfo.deviceId)
+                }
             }
         }
     }
@@ -828,6 +862,7 @@ extension PolarManager: PolarBleApiPowerStateObserver {
             if self.errorMessage == "Bluetooth is turned off" {
                 self.errorMessage = nil
             }
+            self.reconnectLostDevices()
         }
     }
 
