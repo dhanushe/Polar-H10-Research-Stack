@@ -9,6 +9,19 @@ import SwiftUI
 import Combine
 import PolarBleSdk
 
+private let recordingIdAllowedCharacters = Array("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_")
+
+private func generateRandomRecordingId() -> String {
+    var result = ""
+    result.reserveCapacity(20)
+    for _ in 0..<20 {
+        if let char = recordingIdAllowedCharacters.randomElement() {
+            result.append(char)
+        }
+    }
+    return result
+}
+
 struct DashboardView: View {
     @StateObject private var polarManager = PolarManager.shared
     @StateObject private var recordingCoordinator = RecordingCoordinator.shared
@@ -16,9 +29,6 @@ struct DashboardView: View {
     @State private var currentTime = Date()
     @State private var showRecordingSavedAlert = false
     @State private var showRecordingError = false
-    @State private var showRecordingIdSheet = false
-    @State private var recordingIdInput: String = ""
-    @State private var recordingIdError: String?
     @Environment(\.colorScheme) var colorScheme
 
     let timer = Timer.publish(every: 0.1, on: .main, in: .common).autoconnect()
@@ -234,22 +244,6 @@ struct DashboardView: View {
             pauseButton
             stopButton
         }
-        .sheet(isPresented: $showRecordingIdSheet) {
-            RecordingIdEntrySheet(
-                recordingId: $recordingIdInput,
-                errorMessage: $recordingIdError,
-                onCancel: {
-                    recordingIdInput = ""
-                    recordingIdError = nil
-                    showRecordingIdSheet = false
-                },
-                onStart: { id in
-                    let sensorList = polarManager.connectedSensors.map { (id: $0.id, name: $0.deviceName) }
-                    recordingCoordinator.startRecording(sensors: sensorList, recordingId: id)
-                    showRecordingIdSheet = false
-                }
-            )
-        }
     }
 
     private var startButton: some View {
@@ -268,9 +262,9 @@ struct DashboardView: View {
             if isPaused {
                 recordingCoordinator.resumeRecording()
             } else {
-                recordingIdInput = ""
-                recordingIdError = nil
-                showRecordingIdSheet = true
+                let id = generateRandomRecordingId()
+                let sensorList = polarManager.connectedSensors.map { (id: $0.id, name: $0.deviceName) }
+                recordingCoordinator.startRecording(sensors: sensorList, recordingId: id)
             }
         }
     }
