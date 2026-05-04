@@ -27,6 +27,14 @@ struct PolarDashboardApp: App {
                 print("App becoming active - ensuring connections are healthy")
                 polarManager.handleAppForeground()
                 APIServer.shared.start()
+                let coordinator = RecordingCoordinator.shared
+                if UserDefaults.standard.bool(forKey: "recordingWasActive"),
+                   case .idle = coordinator.state {
+                    UserDefaults.standard.set(false, forKey: "recordingWasActive")
+                    Task { @MainActor in
+                        coordinator.setInterruptedError()
+                    }
+                }
             case .inactive:
                 print("App becoming inactive")
             @unknown default:

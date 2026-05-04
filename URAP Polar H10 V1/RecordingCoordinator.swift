@@ -65,6 +65,7 @@ class RecordingCoordinator: ObservableObject {
         activeSensorCount = sensors.count
         state = .recording(startTime: Date())
         error = nil
+        UserDefaults.standard.set(true, forKey: "recordingWasActive")
 
         print("Started recording with \(sensors.count) sensor(s)")
     }
@@ -105,6 +106,7 @@ class RecordingCoordinator: ObservableObject {
 
             // Reset state
             clearCollectors()
+            UserDefaults.standard.set(false, forKey: "recordingWasActive")
             state = .idle
         } catch {
             if let recordingError = error as? RecordingError {
@@ -116,6 +118,7 @@ class RecordingCoordinator: ObservableObject {
 
             // Allow retry by transitioning back to idle after delay
             try? await Task.sleep(nanoseconds: 2_000_000_000)
+            UserDefaults.standard.set(false, forKey: "recordingWasActive")
             state = .idle
         }
     }
@@ -123,6 +126,7 @@ class RecordingCoordinator: ObservableObject {
     /// Cancel recording without saving
     func cancelRecording() {
         clearCollectors()
+        UserDefaults.standard.set(false, forKey: "recordingWasActive")
         state = .idle
         error = nil
         print("Recording cancelled")
@@ -274,5 +278,10 @@ class RecordingCoordinator: ObservableObject {
         liveAccMagnitudes.removeValue(forKey: id)
         activeSensorCount = collectors.count
         print("Removed sensor \(id) from recording")
+    }
+
+    /// Mark that a recording session was interrupted (e.g. app killed in background)
+    func setInterruptedError() {
+        error = .sessionInterrupted
     }
 }
