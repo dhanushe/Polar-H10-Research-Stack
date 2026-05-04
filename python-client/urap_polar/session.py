@@ -274,6 +274,54 @@ class SensorData:
         ]
         return pd.DataFrame(rows)
 
+    def metabolic_rate(
+        self,
+        epoch_seconds: int = 60,
+        weight_kg: Optional[float] = None,
+        age: Optional[float] = None,
+        sex: str = "male",
+        resting_hr: Optional[float] = None,
+        flex_hr: Optional[float] = None,
+        method: str = "auto",
+    ) -> Any:
+        """Estimate metabolic rate from accelerometer (and optionally HR) data.
+
+        Parameters
+        ----------
+        epoch_seconds:
+            Analysis epoch length in seconds (default 60).
+        weight_kg:
+            Body mass in kg for kcal calculation.
+        age:
+            Age in years (improves HR-based accuracy).
+        sex:
+            'male' (default) or 'female'.
+        resting_hr:
+            Resting HR in BPM (auto-estimated if not provided).
+        flex_hr:
+            Override Flex-HR threshold (auto-computed if None).
+        method:
+            'auto' (default), 'hpfvm', 'heart_rate', or 'flex_hr'.
+            'auto' uses flex_hr when both accelerometer and HR data are present,
+            heart_rate when only HR data is present, and hpfvm otherwise.
+
+        Returns
+        -------
+        MetabolicResult with per-epoch METs, intensity, and optional kcal.
+        """
+        from .metabolic import estimate_metabolic_rate
+        return estimate_metabolic_rate(
+            acc_points=self._acc_points,
+            hr_points=self._hr_points if method in ("flex_hr", "heart_rate", "auto") else None,
+            epoch_seconds=epoch_seconds,
+            weight_kg=weight_kg,
+            age=age,
+            sex=sex,
+            resting_hr=resting_hr,
+            flex_hr=flex_hr,
+            method=method,
+        )
+
 
 class RecordingSession:
     """Full recording session with all sensor data and methods."""

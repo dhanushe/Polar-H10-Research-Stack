@@ -250,6 +250,137 @@ def plot_accelerometer(
         plt.close()
 
 
+def plot_metabolic(
+    result: Any,
+    title: str = "Metabolic Rate",
+    show: bool = True,
+    save_path: Optional[str] = None,
+) -> None:
+    """Plot metabolic rate analysis from a MetabolicResult.
+
+    Produces a two-panel figure:
+      Top:    MET timeline coloured by intensity category
+              (sedentary=grey, light=yellow-green, moderate=orange, vigorous=red)
+      Bottom: Stacked bar/pie showing intensity time breakdown + summary stats.
+
+    Parameters
+    ----------
+    result:
+        MetabolicResult from estimate_metabolic_rate() or sensor.metabolic_rate().
+    title:
+        Figure title string.
+    show:
+        Call plt.show() when True.
+    save_path:
+        Optional file path to save the figure.
+    """
+    import matplotlib.dates as mdates
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as mpatches
+
+    if not result.epochs:
+        print("No metabolic data to plot.")
+        return
+
+    COLORS = {
+        "sedentary": "#9E9E9E",
+        "light":     "#8BC34A",
+        "moderate":  "#FF9800",
+        "vigorous":  "#F44336",
+    }
+    LABELS = {
+        "sedentary": f"Sedentary (<{1.5} METs)",
+        "light":     f"Light (1.5–3.0 METs)",
+        "moderate":  f"Moderate (3.0–6.0 METs)",
+        "vigorous":  f"Vigorous (≥6.0 METs)",
+    }
+
+    timestamps = [e.timestamp for e in result.epochs]
+    mets_vals  = [e.mets        for e in result.epochs]
+    intensities = [e.intensity  for e in result.epochs]
+
+    fig, (ax_met, ax_pie) = plt.subplots(
+        1, 2,
+        figsize=(14, 5),
+        gridspec_kw={"width_ratios": [3, 1]},
+    )
+    fig.suptitle(title, fontsize=13)
+
+    # --- MET timeline ---
+    use_datetime = hasattr(timestamps[0], "year")
+
+    for i in range(len(timestamps) - 1):
+        x0 = timestamps[i]
+        x1 = timestamps[i + 1]
+        y  = mets_vals[i]
+        c  = COLORS[intensities[i]]
+        ax_met.fill_between([x0, x1], [y, y], alpha=0.7, color=c, linewidth=0, step="post")
+        ax_met.step([x0, x1], [y, y], color=c, linewidth=1.2, where="post")
+
+    # Last epoch
+    if timestamps:
+        ax_met.axhline(mets_vals[-1], color=COLORS[intensities[-1]], linewidth=0.5, linestyle=":")
+
+    # Threshold lines
+    for thr, label in [(1.5, "Sedentary / Light"), (3.0, "Light / Moderate"), (6.0, "Moderate / Vigorous")]:
+        ax_met.axhline(thr, color="black", linewidth=0.6, linestyle="--", alpha=0.35)
+        ax_met.text(timestamps[0], thr + 0.1, label, fontsize=6.5, color="black", alpha=0.5)
+
+    ax_met.set_ylabel("METs")
+    ax_met.set_ylim(bottom=0)
+    ax_met.grid(True, alpha=0.2)
+    if use_datetime:
+        ax_met.xaxis.set_major_formatter(mdates.DateFormatter("%H:%M:%S"))
+        ax_met.xaxis.set_major_locator(mdates.AutoDateLocator())
+        ax_met.tick_params(axis="x", rotation=15)
+
+    # Legend patches
+    legend_patches = [
+        mpatches.Patch(color=COLORS[k], label=LABELS[k])
+        for k in ("sedentary", "light", "moderate", "vigorous")
+    ]
+    ax_met.legend(handles=legend_patches, loc="upper right", fontsize=7.5)
+
+    # --- Summary pie chart ---
+    bdown = result.intensity_breakdown()
+    pie_labels = []
+    pie_sizes  = []
+    pie_colors = []
+    for cat in ("sedentary", "light", "moderate", "vigorous"):
+        frac = bdown[cat]
+        if frac > 0:
+            mins = frac * result.total_duration_seconds / 60
+            pie_labels.append(f"{cat.capitalize()}\n{mins:.1f} min")
+            pie_sizes.append(frac)
+            pie_colors.append(COLORS[cat])
+
+    if pie_sizes:
+        ax_pie.pie(
+            pie_sizes, labels=pie_labels, colors=pie_colors,
+            autopct="%1.0f%%", startangle=90,
+            textprops={"fontsize": 8},
+            wedgeprops={"linewidth": 0.5, "edgecolor": "white"},
+        )
+
+    # Stat text box
+    stats_lines = [
+        f"Mean METs:  {result.mean_mets:.2f}",
+        f"Duration:   {result.total_duration_seconds/60:.1f} min",
+        f"Method:     {result.method}",
+    ]
+    if result.total_kcal is not None:
+        stats_lines.insert(1, f"Total kcal: {result.total_kcal:.0f}")
+    ax_pie.set_title("\n".join(stats_lines), fontsize=8, loc="center", pad=2)
+
+    plt.tight_layout()
+    if save_path:
+        plt.savefig(save_path, bbox_inches="tight")
+    if show:
+        plt.show()
+    else:
+        plt.close()
+
+
 def plot_rr_intervals(
     session: Union[Any, Dict[str, Any]],
     sensor_id: Optional[str] = None,
